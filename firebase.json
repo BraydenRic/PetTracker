@@ -1,0 +1,29 @@
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "pettracker-682e8",
+          "appId": "1:308784679328:android:f7077d2377f3e0b9327cc5",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "pettracker-682e8",
+          "configurations": {
+            "android": "1:308784679328:android:f7077d2377f3e0b9327cc5",
+            "ios": "1:308784679328:ios:fa76d306f16d465f327cc5",
+            "web": "1:308784679328:web:e64ce3a5bcc2279a327cc5"
+          }
+        }
+      }
+    }
+  },
+  "firestore": {
+    "database": "(default)",
+    "location": "us-west1",
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  }
+}
