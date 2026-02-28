@@ -1,3 +1,9 @@
+// Cartoon dog Lottie animations (LottieFiles CDN, free license).
+// All breeds share the same goofy animation for now.
+// Swap per-breed URLs here whenever you want breed-specific animations.
+const kIdleDogLottieUrl =
+    'https://assets-v2.lottiefiles.com/a/2d976a74-1165-11ee-a477-dfadee75b08f/UNIglhtt7N.json';
+
 class BreedConfig {
   final String key;
   final String displayName;

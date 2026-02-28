@@ -50,7 +50,7 @@ class AppScaffold extends StatelessWidget {
               selectedIndex: currentIndex,
               onDestinationSelected: (i) => _onTap(context, i),
               extended: MediaQuery.of(context).size.width >= 900,
-              backgroundColor: Colors.white,
+              backgroundColor: AppColors.navBg,
               selectedIconTheme: const IconThemeData(color: AppColors.primary),
               selectedLabelTextStyle: const TextStyle(
                 color: AppColors.primary,

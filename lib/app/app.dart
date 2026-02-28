@@ -13,7 +13,7 @@ class PetTrackerApp extends ConsumerWidget {
 
     return MaterialApp.router(
       title: 'PetTracker',
-      theme: AppTheme.light,
+      theme: AppTheme.dark,
       routerConfig: router,
       debugShowCheckedModeBanner: false,
     );

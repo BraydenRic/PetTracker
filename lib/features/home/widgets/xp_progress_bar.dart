@@ -57,7 +57,7 @@ class XpProgressBar extends StatelessWidget {
             builder: (context, value, _) => LinearProgressIndicator(
               value: value,
               minHeight: 12,
-              backgroundColor: const Color(0xFFE0E0E0),
+              backgroundColor: AppColors.locked,
               valueColor:
                   const AlwaysStoppedAnimation<Color>(AppColors.xpBar),
             ),

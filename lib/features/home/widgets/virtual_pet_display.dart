@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:lottie/lottie.dart';
 
 import '../../../app/theme.dart';
+import '../../../config/breeds_config.dart';
 import '../../../config/perks_config.dart';
 
-class VirtualPetDisplay extends StatefulWidget {
+class VirtualPetDisplay extends StatelessWidget {
   final String breedKey;
   final List<String> equippedPerkIds;
   final String petName;
@@ -17,103 +18,54 @@ class VirtualPetDisplay extends StatefulWidget {
   });
 
   @override
-  State<VirtualPetDisplay> createState() => _VirtualPetDisplayState();
-}
-
-class _VirtualPetDisplayState extends State<VirtualPetDisplay>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _bounceController;
-  late final Animation<double> _bounceAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _bounceController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-    _bounceAnim = Tween<double>(begin: 0, end: -8).animate(
-      CurvedAnimation(parent: _bounceController, curve: Curves.easeInOut),
-    );
-  }
-
-  @override
-  void dispose() {
-    _bounceController.dispose();
-    super.dispose();
-  }
-
-  Widget _buildBreedAvatar() {
-    final assetPath = 'assets/avatars/breeds/${widget.breedKey}.svg';
-    // Use SvgPicture when assets are available; fallback to placeholder icon.
-    return FutureBuilder<bool>(
-      future: _assetExists(assetPath),
-      builder: (context, snap) {
-        if (snap.data == true) {
-          return SvgPicture.asset(assetPath, width: 160, height: 160);
-        }
-        return Container(
-          width: 160,
-          height: 160,
-          decoration: BoxDecoration(
-            color: AppColors.primaryLight.withAlpha(40),
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(Icons.pets, size: 80, color: AppColors.primary),
-        );
-      },
-    );
-  }
-
-  Future<bool> _assetExists(String path) async {
-    try {
-      await DefaultAssetBundle.of(context).load(path);
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final accessories = widget.equippedPerkIds
+    final accessories = equippedPerkIds
         .map(perkById)
         .whereType<PerkConfig>()
-        .where((p) => p.isAccessory && p.assetPath != null)
+        .where((p) => p.isAccessory)
         .toList();
 
     return Column(
       children: [
-        AnimatedBuilder(
-          animation: _bounceAnim,
-          builder: (context, child) => Transform.translate(
-            offset: Offset(0, _bounceAnim.value),
-            child: child,
-          ),
-          child: SizedBox(
-            width: 180,
-            height: 180,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                _buildBreedAvatar(),
-                // Accessory overlays
-                for (final acc in accessories)
-                  Positioned(
-                    top: 0,
-                    child: SvgPicture.asset(
-                      acc.assetPath!,
-                      width: 60,
-                      height: 60,
-                    ),
-                  ),
-              ],
-            ),
+        SizedBox(
+          height: 220,
+          child: Lottie.network(
+            kIdleDogLottieUrl,
+            fit: BoxFit.contain,
+            repeat: true,
+            animate: true,
+            frameBuilder: (context, child, composition) {
+              if (composition == null) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              return child;
+            },
+            errorBuilder: (context, error, stack) => const _FallbackIcon(),
           ),
         ),
-        const SizedBox(height: 12),
+
+        // Equipped accessories as emoji strip under the animation
+        if (accessories.isNotEmpty) ...[
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: accessories
+                .map(
+                  (a) => Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      a.iconEmoji,
+                      style: const TextStyle(fontSize: 22),
+                    ),
+                  ),
+                )
+                .toList(),
+          ),
+        ],
+
+        const SizedBox(height: 8),
         Text(
-          widget.petName,
+          petName,
           style: const TextStyle(
             fontSize: 22,
             fontWeight: FontWeight.w800,
@@ -121,6 +73,69 @@ class _VirtualPetDisplayState extends State<VirtualPetDisplay>
           ),
         ),
       ],
+    );
+  }
+}
+
+class _FallbackIcon extends StatefulWidget {
+  const _FallbackIcon();
+
+  @override
+  State<_FallbackIcon> createState() => _FallbackIconState();
+}
+
+class _FallbackIconState extends State<_FallbackIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat(reverse: true);
+    _anim = Tween<double>(begin: 0, end: -10).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: AnimatedBuilder(
+        animation: _anim,
+        builder: (context, child) =>
+            Transform.translate(offset: Offset(0, _anim.value), child: child),
+        child: Container(
+          width: 140,
+          height: 140,
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              colors: [
+                AppColors.primary.withAlpha(50),
+                AppColors.primary.withAlpha(10),
+              ],
+            ),
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.primary.withAlpha(70),
+                blurRadius: 32,
+                spreadRadius: 6,
+              ),
+            ],
+          ),
+          child: const Icon(Icons.pets, size: 72, color: AppColors.primary),
+        ),
+      ),
     );
   }
 }
