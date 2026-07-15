@@ -16,7 +16,9 @@ npx firebase-tools deploy --only firestore:rules --project pettracker-682e8
 
 ## Stack
 
-- **Expo SDK 57** (React Native 0.86, React 19) with **expo-router** file-based routing, TypeScript strict
+- **Expo SDK 54** (React Native 0.81, React 19.1) with **expo-router** file-based routing, TypeScript strict.
+  SDK 54 is deliberate: it's the newest SDK the App Store build of **Expo Go** supports (checked 2026-07-15
+  via `curl https://itunes.apple.com/lookup?bundleId=host.exp.Exponent`). Don't upgrade past what Expo Go runs.
 - **Firebase JS SDK** — Auth (email/password + Google + Apple) and Firestore
 - **react-native-reanimated 4** for animations, **react-native-svg** for the XP ring
 - No state library: React context (`auth-context`, `data-context`) + live Firestore `onSnapshot` subscriptions

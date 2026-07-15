@@ -9,8 +9,7 @@
     "userInterfaceStyle": "light",
     "ios": {
       "bundleIdentifier": "com.brayden.pettracker",
-      "usesAppleSignIn": true,
-      "icon": "./assets/expo.icon"
+      "usesAppleSignIn": true
     },
     "android": {
       "package": "com.brayden.pettracker",
@@ -29,7 +28,6 @@
     "plugins": [
       "expo-router",
       "expo-apple-authentication",
-      "expo-secure-store",
       [
         "expo-splash-screen",
         {
