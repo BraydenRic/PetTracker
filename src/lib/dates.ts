@@ -47,6 +47,38 @@ export const addDays = (d: Date, n: number): Date => {
 export const sameDay = (a: Date, b: Date): boolean =>
   a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
+/** ISO weekday index: Mon=0 .. Sun=6 (matches Routine.days and startOfWeek). */
+export const isoDow = (d: Date): number => (d.getDay() + 6) % 7;
+
+export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+/** Is this routine scheduled to happen on the given date? */
+export const isScheduledOn = (
+  routine: { frequency: RoutineFrequency; days?: number[] | null },
+  d: Date,
+): boolean =>
+  routine.frequency === 'weekly' ||
+  !routine.days?.length ||
+  routine.days.includes(isoDow(d));
+
+/**
+ * The period key a streak must have hit to continue: previous week for weekly
+ * routines, otherwise the most recent *scheduled* day before `from` — so a
+ * Mon/Wed/Fri routine completed Wednesday continues a streak from Monday.
+ */
+export const previousScheduledKey = (
+  routine: { frequency: RoutineFrequency; days?: number[] | null },
+  from: Date = new Date(),
+): string => {
+  if (routine.frequency === 'weekly') return previousPeriodKey('weekly', from);
+  const days = routine.days?.length ? routine.days : [0, 1, 2, 3, 4, 5, 6];
+  for (let i = 1; i <= 7; i++) {
+    const d = addDays(from, -i);
+    if (days.includes(isoDow(d))) return dayKey(d);
+  }
+  return dayKey(addDays(from, -1));
+};
+
 export const formatTime = (ts: number): string =>
   new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 

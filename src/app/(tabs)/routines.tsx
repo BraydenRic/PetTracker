@@ -16,13 +16,15 @@ import {
 
 import { Button, Card, EmptyState, Field, Screen, T } from '@/components/ui';
 import { ACTIVITIES, activityInfo, speciesInfo, type ActivityType } from '@/config/game';
-import { addRoutine, completeRoutine, deleteRoutine } from '@/lib/actions';
+import { addRoutine, completeRoutine, deleteRoutine, updateRoutine } from '@/lib/actions';
 import { useData } from '@/lib/data-context';
 import {
   addDays,
+  DAY_LABELS,
   dayKey,
   formatTime,
   formatTimeOfDay,
+  isScheduledOn,
   sameDay,
   startOfWeek,
   weekKey,
@@ -65,7 +67,15 @@ function StateBadge({ state, onCheck }: { state: SlotState; onCheck?: () => void
   );
 }
 
-function RoutineRow({ routine, state }: { routine: Routine; state: SlotState }) {
+function RoutineRow({
+  routine,
+  state,
+  onEdit,
+}: {
+  routine: Routine;
+  state: SlotState;
+  onEdit: (routine: Routine) => void;
+}) {
   const { pets } = useData();
   const pet = pets.find((p) => p.id === routine.petId);
   const info = activityInfo(routine.activityType);
@@ -88,7 +98,7 @@ function RoutineRow({ routine, state }: { routine: Routine; state: SlotState }) 
   };
 
   return (
-    <Pressable onLongPress={onLongPress}>
+    <Pressable onPress={() => onEdit(routine)} onLongPress={onLongPress}>
       <Card style={[styles.routineCard, (state === 'missed' || state === 'upcoming') && { opacity: 0.75 }]}>
         <View style={[styles.routineEmoji, { backgroundColor: info.tint }]}>
           <Text style={{ fontSize: 22 }}>{info.emoji}</Text>
@@ -99,6 +109,9 @@ function RoutineRow({ routine, state }: { routine: Routine; state: SlotState }) 
           </T>
           <T variant="caption">
             {routine.timeOfDay ? `${formatTimeOfDay(routine.timeOfDay)} · ` : ''}
+            {routine.days?.length && routine.days.length < 7
+              ? `${routine.days.map((d) => DAY_LABELS[d].charAt(0)).join('')} · `
+              : ''}
             {pet ? `${speciesInfo(pet.species).emoji} ${pet.name}` : 'No pet'}
             {routine.streak > 0 ? ` · 🔥 ${routine.streak}` : ''}
           </T>
@@ -111,14 +124,27 @@ function RoutineRow({ routine, state }: { routine: Routine; state: SlotState }) 
 
 // ---------- Add routine sheet ----------
 
-function AddRoutineModal({ onClose }: { onClose: () => void }) {
+function RoutineModal({ routine, onClose }: { routine?: Routine; onClose: () => void }) {
   const { pets, activePet } = useData();
-  const [petId, setPetId] = useState(activePet?.id ?? pets[0]?.id ?? null);
-  const [type, setType] = useState<ActivityType>('walk');
-  const [frequency, setFrequency] = useState<RoutineFrequency>('daily');
-  const [time, setTime] = useState<Date | null>(null);
-  const [title, setTitle] = useState('');
+  const [petId, setPetId] = useState(routine?.petId ?? activePet?.id ?? pets[0]?.id ?? null);
+  const [type, setType] = useState<ActivityType>(routine?.activityType ?? 'walk');
+  const [frequency, setFrequency] = useState<RoutineFrequency>(routine?.frequency ?? 'daily');
+  const [time, setTime] = useState<Date | null>(() => {
+    if (!routine?.timeOfDay) return null;
+    const [h, m] = routine.timeOfDay.split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    return d;
+  });
+  const [title, setTitle] = useState(routine?.title ?? '');
+  // Mon=0..Sun=6; all seven selected = "every day" (stored as null).
+  const [days, setDays] = useState<number[]>(
+    routine?.days?.length ? routine.days : [0, 1, 2, 3, 4, 5, 6],
+  );
   const [busy, setBusy] = useState(false);
+
+  const toggleDay = (d: number) =>
+    setDays((cur) => (cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d].sort()));
 
   const info = activityInfo(type);
   const pet = pets.find((p) => p.id === petId);
@@ -132,18 +158,50 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
 
   const save = async () => {
     if (!petId) return;
+    if (frequency === 'daily' && days.length === 0) {
+      Alert.alert('Pick a day', 'Choose at least one day of the week.');
+      return;
+    }
     setBusy(true);
     try {
       const timeOfDay = time
         ? `${String(time.getHours()).padStart(2, '0')}:${String(time.getMinutes()).padStart(2, '0')}`
         : null;
-      await addRoutine(petId, title.trim() || suggestedTitle, type, frequency, timeOfDay);
+      const finalTitle = title.trim() || suggestedTitle;
+      const finalDays = frequency === 'daily' && days.length < 7 ? days : null;
+      if (routine) {
+        await updateRoutine(routine.id, {
+          petId,
+          title: finalTitle,
+          activityType: type,
+          frequency,
+          timeOfDay,
+          days: finalDays,
+        });
+      } else {
+        await addRoutine(petId, finalTitle, type, frequency, timeOfDay, finalDays);
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       onClose();
     } catch (err) {
       Alert.alert('Could not save', (err as Error).message);
       setBusy(false);
     }
+  };
+
+  const confirmDelete = () => {
+    if (!routine) return;
+    Alert.alert('Delete routine?', `"${routine.title}" and its streak will be gone for good.`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          await deleteRoutine(routine.id);
+          onClose();
+        },
+      },
+    ]);
   };
 
   return (
@@ -153,7 +211,7 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
         style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
           <ScrollView showsVerticalScrollIndicator={false}>
-            <T variant="title">New routine</T>
+            <T variant="title">{routine ? 'Edit routine' : 'New routine'}</T>
 
             <T variant="label" style={styles.modalLabel}>
               FOR
@@ -199,11 +257,41 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
                   onPress={() => setFrequency(f)}
                   style={[styles.pill, frequency === f && styles.pillActive, { flex: 1, alignItems: 'center' }]}>
                   <Text style={[styles.pillText, frequency === f && { color: colors.white }]}>
-                    {f === 'daily' ? 'Every day' : 'Every week'}
+                    {f === 'daily' ? 'On set days' : 'Once a week'}
                   </Text>
                 </Pressable>
               ))}
             </View>
+
+            {frequency === 'daily' && (
+              <>
+                <T variant="label" style={styles.modalLabel}>
+                  ON WHICH DAYS?
+                </T>
+                <View style={{ flexDirection: 'row', gap: space(1.5) }}>
+                  {DAY_LABELS.map((label, d) => {
+                    const on = days.includes(d);
+                    return (
+                      <Pressable
+                        key={label}
+                        onPress={() => toggleDay(d)}
+                        style={[styles.dayToggle, on && styles.pillActive]}>
+                        <Text style={[styles.dayToggleText, on && { color: colors.white }]}>
+                          {label.charAt(0)}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+                <T variant="caption" style={{ marginTop: space(1.5) }}>
+                  {days.length === 7
+                    ? 'Every day'
+                    : days.length === 0
+                      ? 'Pick at least one day'
+                      : days.map((d) => DAY_LABELS[d]).join(' · ')}
+                </T>
+              </>
+            )}
 
             <T variant="label" style={styles.modalLabel}>
               AT WHAT TIME?
@@ -247,8 +335,16 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
 
             <View style={{ flexDirection: 'row', gap: space(3), marginTop: space(5) }}>
               <Button title="Cancel" variant="outline" onPress={onClose} style={{ flex: 1 }} />
-              <Button title="Create" onPress={save} loading={busy} style={{ flex: 1.4 }} />
+              <Button
+                title={routine ? 'Save changes' : 'Create'}
+                onPress={save}
+                loading={busy}
+                style={{ flex: 1.4 }}
+              />
             </View>
+            {routine && (
+              <Button title="Delete routine" variant="danger" onPress={confirmDelete} style={{ marginTop: space(3) }} />
+            )}
           </ScrollView>
         </View>
       </KeyboardAvoidingView>
@@ -261,6 +357,7 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
 export default function RoutinesScreen() {
   const { routines, pets, activities } = useData();
   const [adding, setAdding] = useState(false);
+  const [editing, setEditing] = useState<Routine | null>(null);
   const [weekOffset, setWeekOffset] = useState(0);
   const [selectedDay, setSelectedDay] = useState(() => new Date());
 
@@ -366,7 +463,7 @@ export default function RoutinesScreen() {
             const k = dayKey(day);
             const isSel = sameDay(day, selectedDay);
             const isTod = sameDay(day, today);
-            const dueThatDay = daily.filter((r) => existsOnDay(r, k));
+            const dueThatDay = daily.filter((r) => existsOnDay(r, k) && isScheduledOn(r, day));
             const doneCount = dueThatDay.filter((r) => r.completions?.[k]).length;
             const allDone = dueThatDay.length > 0 && doneCount === dueThatDay.length;
             return (
@@ -421,17 +518,17 @@ export default function RoutinesScreen() {
           />
         )}
 
-        {/* Selected day — only routines that existed by then */}
-        {daily.filter((r) => existsOnDay(r, selKey)).length > 0 && (
+        {/* Selected day — only routines that existed by then and run on that weekday */}
+        {daily.filter((r) => existsOnDay(r, selKey) && isScheduledOn(r, selectedDay)).length > 0 && (
           <>
             <T variant="heading" style={styles.section}>
               {dayLabel}
             </T>
             <View style={{ gap: space(2.5) }}>
               {daily
-                .filter((r) => existsOnDay(r, selKey))
+                .filter((r) => existsOnDay(r, selKey) && isScheduledOn(r, selectedDay))
                 .map((r) => (
-                  <RoutineRow key={r.id} routine={r} state={dayState(r)} />
+                  <RoutineRow key={r.id} routine={r} state={dayState(r)} onEdit={setEditing} />
                 ))}
             </View>
           </>
@@ -447,7 +544,7 @@ export default function RoutinesScreen() {
               {weekly
                 .filter((r) => existsInWeek(r, selWeekKey))
                 .map((r) => (
-                  <RoutineRow key={r.id} routine={r} state={weekState(r)} />
+                  <RoutineRow key={r.id} routine={r} state={weekState(r)} onEdit={setEditing} />
                 ))}
             </View>
           </>
@@ -486,11 +583,12 @@ export default function RoutinesScreen() {
 
         {routines.length > 0 && (
           <T variant="caption" style={{ textAlign: 'center', marginTop: space(5) }}>
-            Routine check-offs earn 1.5× XP plus streak coins. Long-press one to delete.
+            Check-offs earn 1.5× XP plus streak coins. Tap a routine to edit it.
           </T>
         )}
       </ScrollView>
-      {adding && <AddRoutineModal onClose={() => setAdding(false)} />}
+      {adding && <RoutineModal onClose={() => setAdding(false)} />}
+      {editing && <RoutineModal routine={editing} onClose={() => setEditing(null)} />}
     </Screen>
   );
 }
@@ -666,6 +764,20 @@ const styles = StyleSheet.create({
   pillText: {
     fontSize: 13.5,
     fontWeight: '600',
+    color: colors.ink,
+  },
+  dayToggle: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: space(2.5),
+    borderRadius: radius.sm,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.line,
+  },
+  dayToggleText: {
+    fontSize: 13,
+    fontWeight: '700',
     color: colors.ink,
   },
 });

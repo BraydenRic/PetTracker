@@ -19,7 +19,7 @@ import {
 } from '@/config/game';
 import { shopItem, type AccessorySlot } from '@/config/shop';
 import { auth, db } from '@/lib/firebase';
-import { periodKey, previousPeriodKey } from '@/lib/dates';
+import { periodKey, previousScheduledKey } from '@/lib/dates';
 import type { Activity, Pet, Routine, RoutineFrequency } from '@/lib/models';
 
 const uid = (): string => {
@@ -165,7 +165,7 @@ export async function deleteActivity(activity: Activity): Promise<void> {
         delete completions[key];
         const patch: Record<string, unknown> = { completions };
         if (r.lastCompletedKey === key) {
-          const prev = previousPeriodKey(r.frequency, when);
+          const prev = previousScheduledKey(r, when);
           patch.lastCompletedKey = completions[prev] ? prev : null;
           patch.streak = Math.max(0, (r.streak ?? 1) - 1);
         }
@@ -183,6 +183,7 @@ export async function addRoutine(
   activityType: ActivityType,
   frequency: RoutineFrequency,
   timeOfDay: string | null = null,
+  days: number[] | null = null,
 ): Promise<void> {
   await addDoc(collection(db, 'users', uid(), 'routines'), {
     petId,
@@ -190,6 +191,7 @@ export async function addRoutine(
     activityType,
     frequency,
     timeOfDay,
+    days,
     completions: {},
     lastCompletedKey: null,
     streak: 0,
@@ -200,6 +202,24 @@ export async function addRoutine(
 
 export async function deleteRoutine(routineId: string): Promise<void> {
   await deleteDoc(doc(db, 'users', uid(), 'routines', routineId));
+}
+
+/** Edits the routine's definition; completions, streaks and history stay intact. */
+export async function updateRoutine(
+  routineId: string,
+  data: {
+    petId: string;
+    title: string;
+    activityType: ActivityType;
+    frequency: RoutineFrequency;
+    timeOfDay: string | null;
+    days: number[] | null;
+  },
+): Promise<void> {
+  await updateDoc(doc(db, 'users', uid(), 'routines', routineId), {
+    ...data,
+    title: data.title.trim(),
+  });
 }
 
 export const isRoutineDone = (routine: Routine, now: Date = new Date()): boolean =>
@@ -215,7 +235,7 @@ export async function completeRoutine(routine: Routine, pet: Pet): Promise<LogRe
   const key = periodKey(routine.frequency);
   if (routine.completions?.[key]) return null; // already done this period
 
-  const continued = routine.lastCompletedKey === previousPeriodKey(routine.frequency);
+  const continued = routine.lastCompletedKey === previousScheduledKey(routine);
   const newStreak = continued ? routine.streak + 1 : 1;
 
   await updateDoc(doc(db, 'users', userId, 'routines', routine.id), {
