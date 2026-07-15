@@ -44,6 +44,7 @@ export async function addPet(name: string, species: SpeciesKey): Promise<string>
     species,
     xp: 0,
     level: 1,
+    ownedItemIds: [],
     equipped: {},
     backdropId: null,
     createdAt: Date.now(),
@@ -197,23 +198,25 @@ export async function deleteAllUserData(userId: string): Promise<void> {
 
 // ---------- Shop ----------
 
-export async function buyItem(itemId: string): Promise<void> {
+/** Buys an item for one specific pet — coins come from the shared wallet, but
+ * the item goes into that pet's own collection. */
+export async function buyItem(pet: Pet, itemId: string): Promise<void> {
   const userId = uid();
   const item = shopItem(itemId);
   if (!item) throw new Error('Unknown item');
 
   await runTransaction(db, async (tx) => {
     const userRef = doc(db, 'users', userId);
-    const snap = await tx.get(userRef);
-    const data = snap.data();
-    if (!data) throw new Error('Profile missing');
-    const owned: string[] = data.ownedItemIds ?? [];
+    const petRef = doc(db, 'users', userId, 'pets', pet.id);
+    const [userSnap, petSnap] = [await tx.get(userRef), await tx.get(petRef)];
+    const userData = userSnap.data();
+    const petData = petSnap.data();
+    if (!userData || !petData) throw new Error('Profile missing');
+    const owned: string[] = petData.ownedItemIds ?? [];
     if (owned.includes(itemId)) throw new Error('Already owned');
-    if ((data.coins ?? 0) < item.price) throw new Error('NOT_ENOUGH_COINS');
-    tx.update(userRef, {
-      coins: data.coins - item.price,
-      ownedItemIds: [...owned, itemId],
-    });
+    if ((userData.coins ?? 0) < item.price) throw new Error('NOT_ENOUGH_COINS');
+    tx.update(userRef, { coins: userData.coins - item.price });
+    tx.update(petRef, { ownedItemIds: [...owned, itemId] });
   });
 }
 

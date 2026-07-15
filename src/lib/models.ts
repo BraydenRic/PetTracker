@@ -7,8 +7,6 @@ export interface Profile {
   displayName: string | null;
   coins: number;
   activePetId: string | null;
-  /** Shop items purchased — shared across all of the user's pets. */
-  ownedItemIds: string[];
   createdAt: number;
 }
 
@@ -19,6 +17,8 @@ export interface Pet {
   species: SpeciesKey;
   xp: number;
   level: number;
+  /** Shop items this pet owns — each pet has its own collection. */
+  ownedItemIds: string[];
   /** itemId per slot; missing/null = nothing equipped. */
   equipped: Partial<Record<AccessorySlot, string | null>>;
   backdropId: string | null;

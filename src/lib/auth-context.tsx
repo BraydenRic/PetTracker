@@ -65,7 +65,6 @@ export async function ensureUserDoc(user: User): Promise<void> {
   const data = snap.data();
   const patch: Record<string, unknown> = {};
   if (typeof data.coins !== 'number') patch.coins = STARTING_COINS;
-  if (!Array.isArray(data.ownedItemIds)) patch.ownedItemIds = [];
   if (data.activePetId === undefined) patch.activePetId = null;
   if (Object.keys(patch).length) await setDoc(ref, patch, { merge: true });
 }

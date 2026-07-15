@@ -66,7 +66,8 @@ export default function ShopScreen() {
   const { profile, activePet } = useData();
   const [busy, setBusy] = useState(false);
   const coins = profile?.coins ?? 0;
-  const owned = profile?.ownedItemIds ?? [];
+  // Each pet has its own wardrobe — the shop always operates on the active pet.
+  const owned = activePet?.ownedItemIds ?? [];
 
   const stateFor = (item: ShopItem): ItemState => {
     if (!owned.includes(item.id)) return 'locked';
@@ -83,6 +84,10 @@ export default function ShopScreen() {
     const state = stateFor(item);
 
     if (state === 'locked') {
+      if (!activePet) {
+        Alert.alert('No active pet', 'Add a pet first — items are bought for a specific pet.');
+        return;
+      }
       if (coins < item.price) {
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
         Alert.alert(
@@ -91,14 +96,14 @@ export default function ShopScreen() {
         );
         return;
       }
-      Alert.alert(`Buy ${item.name}?`, `This will cost 🪙 ${item.price}.`, [
+      Alert.alert(`Buy ${item.name} for ${activePet.name}?`, `This will cost 🪙 ${item.price}.`, [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Buy',
           onPress: async () => {
             setBusy(true);
             try {
-              await buyItem(item.id);
+              await buyItem(activePet, item.id);
               Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
             } catch (err) {
               Alert.alert('Purchase failed', (err as Error).message);
@@ -150,7 +155,7 @@ export default function ShopScreen() {
         </View>
         <T variant="caption" style={{ marginBottom: space(2) }}>
           {activePet
-            ? `Dressing up: ${activePet.name}. Purchases are shared across all your pets.`
+            ? `Shopping for ${activePet.name} — every pet has their own collection.`
             : 'Add a pet to start dressing them up.'}
         </T>
 
