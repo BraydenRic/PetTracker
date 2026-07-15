@@ -10,7 +10,10 @@
  * box in Expo Go on iOS (enable the Apple provider in Firebase Console).
  */
 export const GOOGLE_AUTH = {
-  webClientId: '',
+  // Firebase's auto-provisioned web client for pettracker-682e8.
+  webClientId: '308784679328-7i32mabkgep295geid4lcm5fq515fi1j.apps.googleusercontent.com',
+  // For smoother native Google sign-in, create iOS/Android OAuth clients in
+  // Google Cloud Console → Credentials and paste them here (needs a dev build).
   iosClientId: '',
   androidClientId: '',
 };

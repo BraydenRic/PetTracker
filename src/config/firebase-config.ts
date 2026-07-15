@@ -10,12 +10,12 @@
  * (If no web app exists yet: `npx firebase-tools apps:create WEB PetTracker --project pettracker-682e8`)
  */
 export const firebaseConfig = {
-  apiKey: 'REPLACE_ME',
+  apiKey: 'AIzaSyCXUiKLL1C-aRaPrR0lyA99Kr3_7-GgfTw',
   authDomain: 'pettracker-682e8.firebaseapp.com',
   projectId: 'pettracker-682e8',
   storageBucket: 'pettracker-682e8.firebasestorage.app',
-  messagingSenderId: 'REPLACE_ME',
-  appId: 'REPLACE_ME',
+  messagingSenderId: '308784679328',
+  appId: '1:308784679328:web:e64ce3a5bcc2279a327cc5',
 };
 
 /** True once real credentials are pasted in — the auth screens check this and

@@ -34,16 +34,26 @@ const AuthContext = createContext<AuthState | null>(null);
 export async function ensureUserDoc(user: User): Promise<void> {
   const ref = doc(db, 'users', user.uid);
   const snap = await getDoc(ref);
-  if (snap.exists()) return;
-  await setDoc(ref, {
-    email: user.email,
-    displayName: user.displayName,
-    coins: STARTING_COINS,
-    activePetId: null,
-    ownedItemIds: [],
-    createdAt: Date.now(),
-    serverCreatedAt: serverTimestamp(),
-  });
+  if (!snap.exists()) {
+    await setDoc(ref, {
+      email: user.email,
+      displayName: user.displayName,
+      coins: STARTING_COINS,
+      activePetId: null,
+      ownedItemIds: [],
+      createdAt: Date.now(),
+      serverCreatedAt: serverTimestamp(),
+    });
+    return;
+  }
+  // Profile docs left over from the old Flutter app are missing the coin
+  // economy fields — backfill defaults so the account works in the new app.
+  const data = snap.data();
+  const patch: Record<string, unknown> = {};
+  if (typeof data.coins !== 'number') patch.coins = STARTING_COINS;
+  if (!Array.isArray(data.ownedItemIds)) patch.ownedItemIds = [];
+  if (data.activePetId === undefined) patch.activePetId = null;
+  if (Object.keys(patch).length) await setDoc(ref, patch, { merge: true });
 }
 
 const passwordProvider = (user: User) =>
