@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
-import { SectionList, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 
 import { Card, EmptyState, Screen, T } from '@/components/ui';
 import { activityInfo } from '@/config/game';
+import { deleteActivity } from '@/lib/actions';
 import { useData } from '@/lib/data-context';
 import { dayKey, formatDayHeading, formatTime } from '@/lib/dates';
 import type { Activity } from '@/lib/models';
@@ -68,8 +69,31 @@ function WeekChart({ activities }: { activities: Activity[] }) {
 
 function ActivityRow({ activity }: { activity: Activity }) {
   const info = activityInfo(activity.type);
+
+  // Accidental log? Long-press takes the entry, XP and coins back.
+  const onLongPress = () => {
+    Alert.alert(
+      'Remove this log?',
+      `"${activity.note ?? info.label}" will be deleted and the +${activity.xp} XP / +${activity.coins} coins taken back.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await deleteActivity(activity);
+            } catch (err) {
+              Alert.alert('Could not remove', (err as Error).message);
+            }
+          },
+        },
+      ],
+    );
+  };
+
   return (
-    <View style={styles.row}>
+    <Pressable onLongPress={onLongPress} style={styles.row}>
       <View style={[styles.rowEmoji, { backgroundColor: info.tint }]}>
         <Text style={{ fontSize: 20 }}>{info.emoji}</Text>
       </View>
@@ -86,7 +110,7 @@ function ActivityRow({ activity }: { activity: Activity }) {
         <Text style={styles.rowXp}>+{activity.xp} XP</Text>
         <T variant="caption">+{activity.coins} 🪙</T>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -117,9 +141,10 @@ export default function JournalScreen() {
         showsVerticalScrollIndicator={false}
         ListHeaderComponent={
           <>
-            <T variant="title" style={{ marginBottom: space(4) }}>
-              Journal
-            </T>
+            <View style={styles.titleRow}>
+              <T variant="title">Journal</T>
+              <T variant="caption">Long-press an entry to remove it</T>
+            </View>
             <WeekChart activities={activities} />
             {activities.length === 0 && (
               <EmptyState
@@ -147,6 +172,12 @@ const styles = StyleSheet.create({
   content: {
     padding: space(5),
     paddingBottom: space(10),
+  },
+  titleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+    marginBottom: space(4),
   },
   chartCard: {
     marginBottom: space(4),

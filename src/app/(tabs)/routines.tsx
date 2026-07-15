@@ -228,6 +228,10 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
                 mode="time"
                 display="spinner"
                 minuteInterval={5}
+                // The spinner defaults to a light gray that vanishes on our cream
+                // background — force ink text.
+                textColor={colors.ink}
+                themeVariant="light"
                 onChange={(_, picked) => picked && setTime(picked)}
                 style={{ alignSelf: 'center' }}
               />
@@ -270,6 +274,11 @@ export default function RoutinesScreen() {
 
   const daily = useMemo(() => routines.filter((r) => r.frequency === 'daily').sort(sortByTime), [routines]);
   const weekly = useMemo(() => routines.filter((r) => r.frequency === 'weekly').sort(sortByTime), [routines]);
+
+  // A routine only "exists" from the day it was created — earlier days must not
+  // show it (or count it as missed). Keys are zero-padded so string compare works.
+  const existsOnDay = (r: Routine, key: string) => key >= dayKey(new Date(r.createdAt));
+  const existsInWeek = (r: Routine, wk: string) => wk >= weekKey(new Date(r.createdAt));
 
   const selKey = dayKey(selectedDay);
   const selWeekKey = weekKey(selectedDay);
@@ -357,9 +366,9 @@ export default function RoutinesScreen() {
             const k = dayKey(day);
             const isSel = sameDay(day, selectedDay);
             const isTod = sameDay(day, today);
-            const dueCount = daily.length;
-            const doneCount = daily.filter((r) => r.completions?.[k]).length;
-            const allDone = dueCount > 0 && doneCount === dueCount;
+            const dueThatDay = daily.filter((r) => existsOnDay(r, k));
+            const doneCount = dueThatDay.filter((r) => r.completions?.[k]).length;
+            const allDone = dueThatDay.length > 0 && doneCount === dueThatDay.length;
             return (
               <Pressable
                 key={k}
@@ -381,7 +390,7 @@ export default function RoutinesScreen() {
                   {day.getDate()}
                 </Text>
                 <View style={styles.dotRow}>
-                  {daily.slice(0, 3).map((r) => (
+                  {dueThatDay.slice(0, 3).map((r) => (
                     <View
                       key={r.id}
                       style={[
@@ -412,30 +421,34 @@ export default function RoutinesScreen() {
           />
         )}
 
-        {/* Selected day */}
-        {daily.length > 0 && (
+        {/* Selected day — only routines that existed by then */}
+        {daily.filter((r) => existsOnDay(r, selKey)).length > 0 && (
           <>
             <T variant="heading" style={styles.section}>
               {dayLabel}
             </T>
             <View style={{ gap: space(2.5) }}>
-              {daily.map((r) => (
-                <RoutineRow key={r.id} routine={r} state={dayState(r)} />
-              ))}
+              {daily
+                .filter((r) => existsOnDay(r, selKey))
+                .map((r) => (
+                  <RoutineRow key={r.id} routine={r} state={dayState(r)} />
+                ))}
             </View>
           </>
         )}
 
         {/* The viewed week */}
-        {weekly.length > 0 && (
+        {weekly.filter((r) => existsInWeek(r, selWeekKey)).length > 0 && (
           <>
             <T variant="heading" style={styles.section}>
               {weekOffset === 0 ? 'Anytime this week' : 'That week'}
             </T>
             <View style={{ gap: space(2.5) }}>
-              {weekly.map((r) => (
-                <RoutineRow key={r.id} routine={r} state={weekState(r)} />
-              ))}
+              {weekly
+                .filter((r) => existsInWeek(r, selWeekKey))
+                .map((r) => (
+                  <RoutineRow key={r.id} routine={r} state={weekState(r)} />
+                ))}
             </View>
           </>
         )}

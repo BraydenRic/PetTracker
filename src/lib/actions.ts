@@ -20,7 +20,7 @@ import {
 import { shopItem, type AccessorySlot } from '@/config/shop';
 import { auth, db } from '@/lib/firebase';
 import { periodKey, previousPeriodKey } from '@/lib/dates';
-import type { Pet, Routine, RoutineFrequency } from '@/lib/models';
+import type { Activity, Pet, Routine, RoutineFrequency } from '@/lib/models';
 
 const uid = (): string => {
   const u = auth.currentUser;
@@ -122,6 +122,56 @@ export async function logActivity(
     tx.update(userRef, { coins: (userSnap.data().coins ?? 0) + coinsGained });
 
     return { xpGained, coinsGained, leveledUp, newLevel };
+  });
+}
+
+/**
+ * Undo for accidental logs: one transaction deletes the entry, takes back the
+ * XP (recomputing level) and coins, and — if it came from a routine check-off —
+ * un-marks that period's completion and steps the streak back.
+ */
+export async function deleteActivity(activity: Activity): Promise<void> {
+  const userId = uid();
+  await runTransaction(db, async (tx) => {
+    const actRef = doc(db, 'users', userId, 'activities', activity.id);
+    const petRef = doc(db, 'users', userId, 'pets', activity.petId);
+    const userRef = doc(db, 'users', userId);
+    const routineRef = activity.routineId
+      ? doc(db, 'users', userId, 'routines', activity.routineId)
+      : null;
+
+    // Firestore transactions require all reads before any write.
+    const actSnap = await tx.get(actRef);
+    if (!actSnap.exists()) return; // already removed elsewhere
+    const petSnap = await tx.get(petRef);
+    const userSnap = await tx.get(userRef);
+    const routineSnap = routineRef ? await tx.get(routineRef) : null;
+
+    tx.delete(actRef);
+
+    if (petSnap.exists()) {
+      const newXp = Math.max(0, (petSnap.data().xp ?? 0) - activity.xp);
+      tx.update(petRef, { xp: newXp, level: levelFromXp(newXp) });
+    }
+    if (userSnap.exists()) {
+      tx.update(userRef, { coins: Math.max(0, (userSnap.data().coins ?? 0) - activity.coins) });
+    }
+    if (routineRef && routineSnap?.exists()) {
+      const r = routineSnap.data() as Routine;
+      const when = new Date(activity.loggedAt);
+      const key = periodKey(r.frequency, when);
+      if (r.completions?.[key]) {
+        const completions = { ...r.completions };
+        delete completions[key];
+        const patch: Record<string, unknown> = { completions };
+        if (r.lastCompletedKey === key) {
+          const prev = previousPeriodKey(r.frequency, when);
+          patch.lastCompletedKey = completions[prev] ? prev : null;
+          patch.streak = Math.max(0, (r.streak ?? 1) - 1);
+        }
+        tx.update(routineRef, patch);
+      }
+    }
   });
 }
 
