@@ -1,0 +1,42 @@
+[debug] [2026-07-15T22:16:41.794Z] ----------------------------------------------------------------------
+[debug] [2026-07-15T22:16:41.796Z] Command:       /usr/bin/node /home/lm1/.npm-global/bin/firebase apps:list --project pettracker-682e8
+[debug] [2026-07-15T22:16:41.796Z] CLI Version:   15.9.0
+[debug] [2026-07-15T22:16:41.796Z] Platform:      linux
+[debug] [2026-07-15T22:16:41.796Z] Node Version:  v20.19.5
+[debug] [2026-07-15T22:16:41.796Z] Time:          Wed Jul 15 2026 15:16:41 GMT-0700 (Pacific Daylight Time)
+[debug] [2026-07-15T22:16:41.796Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-07-15T22:16:41.797Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[debug] [2026-07-15T22:16:41.835Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-07-15T22:16:41.835Z] > authorizing via signed-in user (stachb@sou.edu)
+[debug] [2026-07-15T22:16:41.837Z] Checked if tokens are valid: false, expires at: 1777797140762
+[debug] [2026-07-15T22:16:41.837Z] Checked if tokens are valid: false, expires at: 1777797140762
+[debug] [2026-07-15T22:16:41.837Z] > refreshing access token with scopes: []
+[debug] [2026-07-15T22:16:41.837Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-07-15T22:16:41.837Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-07-15T22:16:42.056Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-07-15T22:16:42.056Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[error] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-07-15T22:16:42.057Z] Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+[debug] [2026-07-15T22:16:42.057Z] FirebaseError: Authentication Error: Your credentials are no longer valid. Please run firebase login --reauth
+
+For CI servers and headless environments, generate a new token with firebase login:ci
+    at invalidCredentialError (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/auth.js:177:12)
+    at refreshTokens (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/auth.js:590:15)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async getAccessToken (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/apiv2.js:52:18)
+    at async Client.addAuthHeader (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/apiv2.js:182:21)
+    at async Client.request (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/apiv2.js:129:34)
+    at async listFirebaseApps (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/management/apps.js:363:30)
+    at async Command.actionFn (/home/lm1/.npm-global/lib/node_modules/firebase-tools/lib/commands/apps-list.js:43:16)
+[error] 
+[error] Error: Failed to list Firebase apps. See firebase-debug.log for more info.
+[debug] [2026-07-15T22:16:42.068Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-07-15T22:16:42.068Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
