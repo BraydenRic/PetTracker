@@ -77,7 +77,7 @@ export default function ProfileScreen() {
         },
       ],
       'plain-text',
-      profile?.displayName ?? '',
+      profile?.displayName ?? user?.displayName ?? '',
     );
   };
 
@@ -133,7 +133,9 @@ export default function ProfileScreen() {
     );
   };
 
-  const initial = (profile?.displayName ?? user?.email ?? '?').charAt(0).toUpperCase();
+  const initial = (profile?.displayName ?? user?.displayName ?? user?.email ?? '?')
+    .charAt(0)
+    .toUpperCase();
 
   return (
     <Screen>
@@ -149,7 +151,7 @@ export default function ProfileScreen() {
           </View>
           <View style={{ flex: 1 }}>
             <Pressable onPress={editName} style={styles.nameRow}>
-              <T variant="heading">{profile?.displayName ?? 'Pet lover'}</T>
+              <T variant="heading">{profile?.displayName ?? user?.displayName ?? 'Pet lover'}</T>
               <Ionicons name="pencil" size={14} color={colors.faint} />
             </Pressable>
             <T variant="caption">{user?.email}</T>

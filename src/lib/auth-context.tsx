@@ -66,6 +66,10 @@ export async function ensureUserDoc(user: User): Promise<void> {
   const patch: Record<string, unknown> = {};
   if (typeof data.coins !== 'number') patch.coins = STARTING_COINS;
   if (data.activePetId === undefined) patch.activePetId = null;
+  // Email sign-up creates this doc before updateProfile attaches the name
+  // (onAuthStateChanged races the sign-up flow) — sync it once it exists.
+  if (!data.displayName && user.displayName) patch.displayName = user.displayName;
+  if (!data.email && user.email) patch.email = user.email;
   if (Object.keys(patch).length) await setDoc(ref, patch, { merge: true });
 }
 
