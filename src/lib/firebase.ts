@@ -1,11 +1,8 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getApps, initializeApp } from 'firebase/app';
-import {
-  getAuth,
-  getReactNativePersistence,
-  initializeAuth,
-  type Auth,
-} from 'firebase/auth';
+import { getAuth, initializeAuth, type Auth } from 'firebase/auth';
+// @ts-expect-error — only typed in firebase's react-native entry, which Metro resolves at runtime
+import { getReactNativePersistence } from 'firebase/auth';
 import { initializeFirestore, type Firestore } from 'firebase/firestore';
 import { Platform } from 'react-native';
 

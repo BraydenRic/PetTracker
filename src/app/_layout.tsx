@@ -61,7 +61,7 @@ export default function RootLayout() {
   return (
     <AuthProvider>
       <DataProvider>
-        <StatusBar style="dark" backgroundColor={colors.bg} />
+        <StatusBar style="dark" />
         <RootNavigator />
       </DataProvider>
     </AuthProvider>
