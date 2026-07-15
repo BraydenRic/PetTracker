@@ -14,6 +14,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import { speciesInfo } from '@/config/game';
 import type { LogResult } from '@/lib/actions';
 import type { Pet } from '@/lib/models';
@@ -22,13 +24,16 @@ import { colors, fonts, radius, space } from '@/theme';
 
 /** Small pill that pops up after any log: "+25 XP · +6 coins". */
 export function RewardToast({ result }: { result: LogResult | null }) {
+  // Absolute positioning escapes the SafeAreaView's padding, so offset past
+  // the notch/Dynamic Island manually or the pill hides behind it.
+  const insets = useSafeAreaInsets();
   if (!result) return null;
   return (
     <Animated.View
       key={`${result.xpGained}-${Date.now()}`}
       entering={FadeInDown.springify().damping(14)}
       exiting={FadeOutUp.duration(250)}
-      style={styles.toast}
+      style={[styles.toast, { top: insets.top + space(3) }]}
       pointerEvents="none">
       <Text style={styles.toastText}>
         +{result.xpGained} XP · +{result.coinsGained} 🪙
@@ -76,7 +81,8 @@ export function LevelUpModal({
   const pop = useSharedValue(0);
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-    pop.value = withSpring(1, { damping: 12, stiffness: 120 });
+    // Gentle settle — a big overshoot here reads as jittery, not celebratory.
+    pop.value = withSpring(1, { damping: 20, stiffness: 160, overshootClamping: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const cardStyle = useAnimatedStyle(() => ({
@@ -119,7 +125,6 @@ export function LevelUpModal({
 const styles = StyleSheet.create({
   toast: {
     position: 'absolute',
-    top: space(4),
     alignSelf: 'center',
     backgroundColor: colors.ink,
     borderRadius: 999,

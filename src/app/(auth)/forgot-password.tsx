@@ -39,6 +39,9 @@ export default function ForgotPasswordScreen() {
           We sent a password reset link to{'\n'}
           <Text style={{ fontWeight: '700', color: colors.ink }}>{email.trim()}</Text>
         </T>
+        <T variant="caption" style={{ color: colors.accentDark, textAlign: 'center' }}>
+          Check your spam folder if it doesn't show up in a minute.
+        </T>
         <Button
           title="Back to sign in"
           onPress={() => router.replace('/(auth)/sign-in')}

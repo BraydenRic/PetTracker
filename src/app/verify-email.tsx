@@ -54,6 +54,9 @@ export default function VerifyEmailScreen() {
         <Text style={{ fontWeight: '700', color: colors.ink }}>{user?.email}</Text>
         {'\n'}Tap it, then come back here.
       </T>
+      <T variant="caption" style={{ color: colors.accentDark, textAlign: 'center' }}>
+        Not seeing it? Check your spam folder — it usually ends up there.
+      </T>
 
       {status && (
         <T variant="caption" style={{ color: colors.accentDark, textAlign: 'center' }}>
