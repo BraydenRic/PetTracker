@@ -1,18 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { Button, Field, Screen, T } from '@/components/ui';
+import { Button, Field, FormScroll, Screen, T } from '@/components/ui';
 import { SPECIES, type SpeciesKey } from '@/config/game';
 import { addPet } from '@/lib/actions';
 import { colors, radius, space } from '@/theme';
@@ -44,11 +35,7 @@ export default function NewPetScreen() {
 
   return (
     <Screen edges={['top', 'bottom']}>
-      {/* Modal sheet + keyboard would otherwise cover the name field on smaller phones. */}
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <FormScroll contentStyle={styles.content}>
         <T variant="display">Who's joining?</T>
         <T variant="body" style={{ color: colors.sub, marginTop: space(1.5) }}>
           Pick a species, give them a name, and their adventure begins at level 1.
@@ -92,8 +79,7 @@ export default function NewPetScreen() {
         )}
 
           <Button title="Cancel" variant="ghost" onPress={() => router.back()} style={{ marginTop: space(3) }} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </FormScroll>
     </Screen>
   );
 }

@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { Button, Field, Screen, T } from '@/components/ui';
+import { Button, Field, FormScroll, Screen, T } from '@/components/ui';
 import { friendlyAuthError, useAuth } from '@/lib/auth-context';
 import { colors, space } from '@/theme';
 
@@ -53,7 +53,7 @@ export default function ForgotPasswordScreen() {
 
   return (
     <Screen edges={['top', 'bottom']}>
-      <View style={styles.content}>
+      <FormScroll contentStyle={styles.content}>
         <Button title="‹ Back" variant="ghost" onPress={() => router.back()} style={styles.back} />
         <T variant="display">Reset password</T>
         <T variant="body" style={{ color: colors.sub, marginTop: space(1.5) }}>
@@ -72,7 +72,7 @@ export default function ForgotPasswordScreen() {
           />
           <Button title="Send reset link" onPress={submit} loading={busy} />
         </View>
-      </View>
+      </FormScroll>
     </Screen>
   );
 }

@@ -1,7 +1,9 @@
 import React from 'react';
 import {
   ActivityIndicator,
+  Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -67,6 +69,29 @@ export function Card({
   style?: StyleProp<ViewStyle>;
 }) {
   return <View style={[styles.card, style]}>{children}</View>;
+}
+
+/**
+ * Scroll container for any screen with text inputs. iOS keyboard handling uses
+ * the native `automaticallyAdjustKeyboardInsets` (far more reliable than
+ * KeyboardAvoidingView); Android resizes the window on its own.
+ */
+export function FormScroll({
+  children,
+  contentStyle,
+}: {
+  children: React.ReactNode;
+  contentStyle?: StyleProp<ViewStyle>;
+}) {
+  return (
+    <ScrollView
+      contentContainerStyle={contentStyle}
+      keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}
+      showsVerticalScrollIndicator={false}>
+      {children}
+    </ScrollView>
+  );
 }
 
 // ---------- Buttons ----------

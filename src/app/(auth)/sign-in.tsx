@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { SocialButtons } from '@/components/social-buttons';
-import { Button, Divider, Field, Screen, T } from '@/components/ui';
+import { Button, Divider, Field, FormScroll, Screen, T } from '@/components/ui';
 import { friendlyAuthError, useAuth } from '@/lib/auth-context';
 import { colors, space } from '@/theme';
 
@@ -34,10 +34,7 @@ export default function SignInScreen() {
 
   return (
     <Screen edges={['top', 'bottom']}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={{ flex: 1 }}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+      <FormScroll contentStyle={styles.content}>
           <Button title="‹ Back" variant="ghost" onPress={() => router.back()} style={styles.back} />
           <T variant="display">Welcome back</T>
           <T variant="body" style={{ color: colors.sub, marginTop: space(1.5) }}>
@@ -72,8 +69,7 @@ export default function SignInScreen() {
             <Divider label="or" />
             <SocialButtons onError={(err) => setError(friendlyAuthError(err))} />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </FormScroll>
     </Screen>
   );
 }

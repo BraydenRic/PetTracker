@@ -2,7 +2,9 @@ import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import {
   Alert,
+  KeyboardAvoidingView,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -106,7 +108,10 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
 
   return (
     <Modal transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.modalOverlay}>
+      {/* Bottom sheets sit exactly where the keyboard appears — pad the sheet up. */}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.modalOverlay}>
         <View style={styles.modalSheet}>
           <T variant="title">New routine</T>
 
@@ -173,7 +178,7 @@ function AddRoutineModal({ onClose }: { onClose: () => void }) {
             <Button title="Create" onPress={save} loading={busy} style={{ flex: 1.4 }} />
           </View>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
