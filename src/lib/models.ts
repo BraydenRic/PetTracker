@@ -1,0 +1,57 @@
+import type { ActivityType, SpeciesKey } from '@/config/game';
+import type { AccessorySlot } from '@/config/shop';
+
+/** users/{uid} */
+export interface Profile {
+  email: string | null;
+  displayName: string | null;
+  coins: number;
+  activePetId: string | null;
+  /** Shop items purchased — shared across all of the user's pets. */
+  ownedItemIds: string[];
+  createdAt: number;
+}
+
+/** users/{uid}/pets/{petId} */
+export interface Pet {
+  id: string;
+  name: string;
+  species: SpeciesKey;
+  xp: number;
+  level: number;
+  /** itemId per slot; missing/null = nothing equipped. */
+  equipped: Partial<Record<AccessorySlot, string | null>>;
+  backdropId: string | null;
+  createdAt: number;
+}
+
+/** users/{uid}/activities/{id} */
+export interface Activity {
+  id: string;
+  petId: string;
+  petName: string;
+  type: ActivityType;
+  xp: number;
+  coins: number;
+  /** Set when the log came from checking off a routine. */
+  routineId: string | null;
+  note: string | null;
+  loggedAt: number;
+}
+
+export type RoutineFrequency = 'daily' | 'weekly';
+
+/** users/{uid}/routines/{id} */
+export interface Routine {
+  id: string;
+  petId: string;
+  title: string;
+  activityType: ActivityType;
+  frequency: RoutineFrequency;
+  /** Period keys (YYYY-MM-DD or YYYY-Wnn) that have been completed. */
+  completions: Record<string, number>;
+  lastCompletedKey: string | null;
+  streak: number;
+  bestStreak: number;
+  createdAt: number;
+}
