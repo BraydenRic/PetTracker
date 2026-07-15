@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDocs,
   runTransaction,
   updateDoc,
 } from 'firebase/firestore';
@@ -177,6 +178,21 @@ export async function completeRoutine(routine: Routine, pet: Pet): Promise<LogRe
     bonusCoins: streakBonusCoins(newStreak),
     note: routine.title,
   });
+}
+
+// ---------- Account deletion ----------
+
+/**
+ * Wipes everything the user owns, for in-app account deletion (App Store
+ * guideline 5.1.1 requires it). Runs while still authenticated so the security
+ * rules permit the deletes; the auth user itself is deleted right after.
+ */
+export async function deleteAllUserData(userId: string): Promise<void> {
+  for (const sub of ['pets', 'activities', 'routines'] as const) {
+    const snap = await getDocs(collection(db, 'users', userId, sub));
+    await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+  }
+  await deleteDoc(doc(db, 'users', userId));
 }
 
 // ---------- Shop ----------

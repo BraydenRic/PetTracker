@@ -1,6 +1,9 @@
 import {
   createUserWithEmailAndPassword,
+  deleteUser,
+  EmailAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
   sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
@@ -12,6 +15,8 @@ import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 
 import { STARTING_COINS } from '@/config/game';
+import { deleteAllUserData } from '@/lib/actions';
+import { getAppleFirebaseCredential } from '@/lib/apple-credential';
 import { auth, db } from '@/lib/firebase';
 
 interface AuthState {
@@ -24,7 +29,16 @@ interface AuthState {
   resetPassword: (email: string) => Promise<void>;
   resendVerification: () => Promise<void>;
   reloadUser: () => Promise<void>;
+  /** Updates the display name on both the auth profile and the Firestore profile doc. */
+  updateDisplayName: (name: string) => Promise<void>;
   signOut: () => Promise<void>;
+  /**
+   * Permanently deletes the account and all its data (App Store 5.1.1).
+   * Firebase requires fresh credentials: password users pass their password,
+   * Apple users re-confirm through the native sheet. Resolves false if they
+   * dismissed that sheet (nothing deleted).
+   */
+  deleteAccount: (password?: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -99,8 +113,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(auth.currentUser ? ({ ...auth.currentUser } as User) : null);
   }, []);
 
+  const updateDisplayName = useCallback(async (name: string) => {
+    const current = auth.currentUser;
+    const trimmed = name.trim();
+    if (!current || !trimmed) return;
+    await updateProfile(current, { displayName: trimmed });
+    // The home screen greets from the Firestore profile doc — keep it in sync.
+    await setDoc(doc(db, 'users', current.uid), { displayName: trimmed }, { merge: true });
+    // updateProfile mutates currentUser without re-emitting onAuthStateChanged,
+    // so hand React a fresh object to trigger a re-render.
+    setUser({ ...current, displayName: trimmed } as User);
+  }, []);
+
   const signOut = useCallback(async () => {
     await fbSignOut(auth);
+  }, []);
+
+  const deleteAccount = useCallback(async (password?: string): Promise<boolean> => {
+    const current = auth.currentUser;
+    if (!current) throw new Error('No signed-in account.');
+    // Firebase refuses to delete stale sessions; re-verify identity first so
+    // the data wipe never runs unless the account deletion can follow.
+    const providers = current.providerData.map((p) => p.providerId);
+    if (providers.includes('password')) {
+      if (!current.email) throw new Error('No email on this account.');
+      await reauthenticateWithCredential(
+        current,
+        EmailAuthProvider.credential(current.email, password ?? ''),
+      );
+    } else if (providers.includes('apple.com')) {
+      const cred = await getAppleFirebaseCredential();
+      if (!cred) return false; // dismissed the Apple sheet — abort untouched
+      await reauthenticateWithCredential(current, cred);
+    }
+    // Google sessions fall through without reauth; if Firebase rejects the
+    // delete as stale, the caller surfaces a "sign out and back in" message.
+    await deleteAllUserData(current.uid);
+    await deleteUser(current);
+    return true;
   }, []);
 
   const needsVerification = !!user && passwordProvider(user) && !user.emailVerified;
@@ -116,7 +166,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         resetPassword,
         resendVerification,
         reloadUser,
+        updateDisplayName,
         signOut,
+        deleteAccount,
       }}>
       {children}
     </AuthContext.Provider>

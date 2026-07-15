@@ -1,11 +1,11 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
-import * as Crypto from 'expo-crypto';
 import * as Google from 'expo-auth-session/providers/google';
 import * as WebBrowser from 'expo-web-browser';
-import { GoogleAuthProvider, OAuthProvider, signInWithCredential } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithCredential } from 'firebase/auth';
 import { useEffect, useState } from 'react';
 
 import { GOOGLE_AUTH, isGoogleAuthConfigured } from '@/config/auth-config';
+import { getAppleFirebaseCredential } from '@/lib/apple-credential';
 import { ensureUserDoc } from '@/lib/auth-context';
 import { auth } from '@/lib/firebase';
 
@@ -49,7 +49,8 @@ export function useGoogleSignIn(onError: (err: unknown) => void) {
 
 /**
  * Native Apple sign-in (iOS only; supported inside Expo Go).
- * Uses a hashed nonce so Firebase can verify the identity token wasn't replayed.
+ * Credential creation lives in apple-credential.ts so account deletion can
+ * reuse it for re-verification.
  */
 export function useAppleSignIn(onError: (err: unknown) => void) {
   const [busy, setBusy] = useState(false);
@@ -62,29 +63,12 @@ export function useAppleSignIn(onError: (err: unknown) => void) {
   const signIn = async () => {
     try {
       setBusy(true);
-      const rawNonce = Crypto.randomUUID();
-      const hashedNonce = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        rawNonce,
-      );
-      const appleCred = await AppleAuthentication.signInAsync({
-        requestedScopes: [
-          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-          AppleAuthentication.AppleAuthenticationScope.EMAIL,
-        ],
-        nonce: hashedNonce,
-      });
-      if (!appleCred.identityToken) throw new Error('Apple sign-in returned no token');
-      const provider = new OAuthProvider('apple.com');
-      const cred = provider.credential({
-        idToken: appleCred.identityToken,
-        rawNonce,
-      });
+      const cred = await getAppleFirebaseCredential();
+      if (!cred) return; // user dismissed the sheet
       const result = await signInWithCredential(auth, cred);
       await ensureUserDoc(result.user);
     } catch (err) {
-      // User backing out of the Apple sheet isn't an error worth surfacing.
-      if ((err as { code?: string })?.code !== 'ERR_REQUEST_CANCELED') onError(err);
+      onError(err);
     } finally {
       setBusy(false);
     }

@@ -21,7 +21,7 @@ function Stat({ value, label }: { value: string | number; label: string }) {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, signOut, updateDisplayName, deleteAccount } = useAuth();
   const { profile, pets, activities, routines, activePet } = useData();
 
   const stats = useMemo(() => {
@@ -55,6 +55,84 @@ export default function ProfileScreen() {
     ]);
   };
 
+  // Apple hides the real name behind "Hide My Email" and only shares it once,
+  // so let people set the name shown on their profile themselves.
+  const editName = () => {
+    Alert.prompt(
+      'Your name',
+      'This is the name shown on your profile and home screen.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Save',
+          onPress: async (name?: string) => {
+            const trimmed = (name ?? '').trim();
+            if (!trimmed || trimmed === profile?.displayName) return;
+            try {
+              await updateDisplayName(trimmed);
+            } catch {
+              Alert.alert("Couldn't update name", 'Check your connection and try again.');
+            }
+          },
+        },
+      ],
+      'plain-text',
+      profile?.displayName ?? '',
+    );
+  };
+
+  // App Store guideline 5.1.1: apps with account creation must offer in-app
+  // account deletion. Password users re-type their password; Apple users
+  // confirm through the native sign-in sheet.
+  const hasPassword = providers.includes('password');
+
+  const runDeleteAccount = async (password?: string) => {
+    try {
+      await deleteAccount(password);
+      // On success the auth listener fires and routes back to the welcome screen.
+    } catch (err) {
+      const code = (err as { code?: string })?.code;
+      Alert.alert(
+        "Couldn't delete account",
+        code === 'auth/requires-recent-login'
+          ? 'For security, sign out and back in first, then try again.'
+          : hasPassword
+            ? 'Check your password and connection, then try again.'
+            : `We couldn't confirm it's you. Pick the same ${providerLabel} account you signed up with and try again.`,
+      );
+    }
+  };
+
+  const confirmDeleteAccount = () => {
+    Alert.alert(
+      'Delete account?',
+      'Your account, pets, XP, coins and journal will be permanently erased. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          style: 'destructive',
+          onPress: () =>
+            hasPassword
+              ? Alert.prompt(
+                  'Confirm your password',
+                  'Enter your password to permanently delete your account.',
+                  [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                      text: 'Delete forever',
+                      style: 'destructive',
+                      onPress: (pw?: string) => runDeleteAccount(pw),
+                    },
+                  ],
+                  'secure-text',
+                )
+              : runDeleteAccount(),
+        },
+      ],
+    );
+  };
+
   const initial = (profile?.displayName ?? user?.email ?? '?').charAt(0).toUpperCase();
 
   return (
@@ -70,7 +148,10 @@ export default function ProfileScreen() {
             <Text style={styles.avatarText}>{initial}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <T variant="heading">{profile?.displayName ?? 'Pet lover'}</T>
+            <Pressable onPress={editName} style={styles.nameRow}>
+              <T variant="heading">{profile?.displayName ?? 'Pet lover'}</T>
+              <Ionicons name="pencil" size={14} color={colors.faint} />
+            </Pressable>
             <T variant="caption">{user?.email}</T>
             <View style={styles.providerPill}>
               <Ionicons
@@ -150,9 +231,15 @@ export default function ProfileScreen() {
 
         <Button
           title="Sign out"
-          variant="danger"
+          variant="outline"
           onPress={confirmSignOut}
           style={{ marginTop: space(8) }}
+        />
+        <Button
+          title="Delete account"
+          variant="danger"
+          onPress={confirmDeleteAccount}
+          style={{ marginTop: space(3) }}
         />
         <T variant="caption" style={styles.footer}>
           PetTracker · made with 🐾
@@ -184,6 +271,11 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontFamily: fonts.display,
     fontSize: 26,
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(1.5),
   },
   providerPill: {
     flexDirection: 'row',
