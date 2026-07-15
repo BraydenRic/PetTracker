@@ -17,6 +17,7 @@ import { ACTIVITIES, levelProgress, speciesInfo, type ActivityInfo } from '@/con
 import { completeRoutine, isRoutineDone, logActivity, setActivePet, type LogResult } from '@/lib/actions';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
+import { formatTimeOfDay } from '@/lib/dates';
 import type { Routine } from '@/lib/models';
 import { colors, fonts, radius, space } from '@/theme';
 
@@ -47,9 +48,9 @@ export default function HomeScreen() {
 
   const dueToday = useMemo(
     () =>
-      routines.filter(
-        (r) => r.petId === activePet?.id && !isRoutineDone(r),
-      ),
+      routines
+        .filter((r) => r.petId === activePet?.id && !isRoutineDone(r))
+        .sort((a, b) => (a.timeOfDay ?? '99:99').localeCompare(b.timeOfDay ?? '99:99')),
     [routines, activePet?.id],
   );
 
@@ -215,6 +216,7 @@ export default function HomeScreen() {
                       {r.title}
                     </T>
                     <T variant="caption">
+                      {r.timeOfDay ? `${formatTimeOfDay(r.timeOfDay)} · ` : ''}
                       {r.frequency === 'daily' ? 'Daily' : 'Weekly'}
                       {r.streak > 0 ? ` · 🔥 ${r.streak}` : ''}
                     </T>

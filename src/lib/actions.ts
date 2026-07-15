@@ -132,12 +132,14 @@ export async function addRoutine(
   title: string,
   activityType: ActivityType,
   frequency: RoutineFrequency,
+  timeOfDay: string | null = null,
 ): Promise<void> {
   await addDoc(collection(db, 'users', uid(), 'routines'), {
     petId,
     title: title.trim(),
     activityType,
     frequency,
+    timeOfDay,
     completions: {},
     lastCompletedKey: null,
     streak: 0,

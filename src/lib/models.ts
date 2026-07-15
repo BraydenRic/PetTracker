@@ -48,6 +48,8 @@ export interface Routine {
   title: string;
   activityType: ActivityType;
   frequency: RoutineFrequency;
+  /** Optional scheduled time in 24h "HH:mm" (e.g. "09:00" = feed at 9 AM); null = anytime. */
+  timeOfDay: string | null;
   /** Period keys (YYYY-MM-DD or YYYY-Wnn) that have been completed. */
   completions: Record<string, number>;
   lastCompletedKey: string | null;

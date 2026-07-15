@@ -30,8 +30,33 @@ export const previousPeriodKey = (freq: RoutineFrequency, d: Date = new Date()):
 
 export const isToday = (ts: number): boolean => dayKey(new Date(ts)) === dayKey();
 
+/** Midnight local time (weeks start Monday, matching weekKey's ISO weeks). */
+export const startOfWeek = (d: Date): Date => {
+  const date = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const dow = (date.getDay() + 6) % 7; // Mon=0 .. Sun=6
+  date.setDate(date.getDate() - dow);
+  return date;
+};
+
+export const addDays = (d: Date, n: number): Date => {
+  const copy = new Date(d);
+  copy.setDate(copy.getDate() + n);
+  return copy;
+};
+
+export const sameDay = (a: Date, b: Date): boolean =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
 export const formatTime = (ts: number): string =>
   new Date(ts).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+/** "09:00" → "9:00 AM" (localized). */
+export const formatTimeOfDay = (hhmm: string): string => {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date();
+  d.setHours(h, m, 0, 0);
+  return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+};
 
 export const formatDayHeading = (key: string): string => {
   if (key === dayKey()) return 'Today';
