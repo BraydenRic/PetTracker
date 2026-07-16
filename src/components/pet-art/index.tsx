@@ -19,6 +19,21 @@ const SLOT_ANCHOR = {
 /** Draw order: neckwear tucks under the chin, headwear over it, eyewear on top. */
 const WEAR_ORDER = ['neckwear', 'headwear', 'eyewear'] as const;
 
+/**
+ * Standalone accessory render for shop cards, so the preview is exactly the
+ * art the pet will wear. Returns null when an item has no vector art
+ * (companions, backdrops) — callers fall back to the emoji.
+ */
+export function AccessoryPreview({ itemId, size }: { itemId: string; size: number }) {
+  const art = ACCESSORY_ART[itemId];
+  if (!art) return null;
+  return (
+    <Svg width={size} height={size} viewBox={art.preview}>
+      <art.Art />
+    </Svg>
+  );
+}
+
 export function VectorPet({
   species,
   equipped,

@@ -18,6 +18,8 @@ export interface AccessoryArtDef {
   origin: { x: number; y: number };
   /** Rendered width relative to the anchor width (1 = exactly anchor.w). */
   scale?: number;
+  /** Square viewBox that frames the art for shop previews. */
+  preview: string;
 }
 
 function CapArt() {
@@ -149,14 +151,14 @@ function MedalArt() {
 /** Keyed by shop item id (see src/config/shop.ts). Companions stay in the
  * backdrop scene as emoji, so they're not here. */
 export const ACCESSORY_ART: Record<string, AccessoryArtDef> = {
-  cap: { Art: CapArt, origin: { x: 50, y: 90 }, scale: 1.05 },
-  bow: { Art: BowArt, origin: { x: 50, y: 80 }, scale: 0.8 },
-  grad_cap: { Art: GradCapArt, origin: { x: 50, y: 82 }, scale: 1.15 },
-  top_hat: { Art: TopHatArt, origin: { x: 50, y: 88 }, scale: 0.95 },
-  crown: { Art: CrownArt, origin: { x: 50, y: 88 }, scale: 0.75 },
-  glasses: { Art: GlassesArt, origin: { x: 50, y: 50 } },
-  shades: { Art: ShadesArt, origin: { x: 50, y: 50 } },
-  scarf: { Art: ScarfArt, origin: { x: 50, y: 49 }, scale: 1.1 },
-  bell: { Art: BellArt, origin: { x: 50, y: 48 }, scale: 1.05 },
-  medal: { Art: MedalArt, origin: { x: 50, y: 46 }, scale: 0.9 },
+  cap: { Art: CapArt, origin: { x: 50, y: 90 }, scale: 1.05, preview: '8 28 84 84' },
+  bow: { Art: BowArt, origin: { x: 50, y: 80 }, scale: 0.8, preview: '10 24 80 80' },
+  grad_cap: { Art: GradCapArt, origin: { x: 50, y: 82 }, scale: 1.15, preview: '0 10 100 100' },
+  top_hat: { Art: TopHatArt, origin: { x: 50, y: 88 }, scale: 0.95, preview: '5 11 90 90' },
+  crown: { Art: CrownArt, origin: { x: 50, y: 88 }, scale: 0.75, preview: '6 20 88 88' },
+  glasses: { Art: GlassesArt, origin: { x: 50, y: 50 }, preview: '2 4 96 96' },
+  shades: { Art: ShadesArt, origin: { x: 50, y: 50 }, preview: '2 4 96 96' },
+  scarf: { Art: ScarfArt, origin: { x: 50, y: 49 }, scale: 1.1, preview: '6 18 88 88' },
+  bell: { Art: BellArt, origin: { x: 50, y: 48 }, scale: 1.05, preview: '5 10 90 90' },
+  medal: { Art: MedalArt, origin: { x: 50, y: 46 }, scale: 0.9, preview: '17 19 66 66' },
 };

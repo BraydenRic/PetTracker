@@ -3,7 +3,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { AccessoryPreview } from '@/components/pet-art';
+import { ACCESSORY_ART } from '@/components/pet-art/accessories';
 import { CoinPill, Screen, T } from '@/components/ui';
+import { USE_VECTOR_PETS } from '@/config/game';
 import {
   ACCESSORY_SLOTS,
   SHOP_ITEMS,
@@ -41,6 +44,9 @@ function ItemCard({
           <LinearGradient colors={(item as BackdropItem).colors} style={StyleSheet.absoluteFill} />
           <Text style={{ fontSize: 24 }}>{(item as BackdropItem).decor}</Text>
         </View>
+      ) : USE_VECTOR_PETS && ACCESSORY_ART[item.id] ? (
+        // Preview the exact vector art the pet will wear, not the lookalike emoji.
+        <AccessoryPreview itemId={item.id} size={46} />
       ) : (
         <Text style={{ fontSize: 38 }}>{(item as AccessoryItem).emoji}</Text>
       )}
