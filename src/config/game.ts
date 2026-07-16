@@ -121,6 +121,14 @@ export const streakBonusCoins = (streak: number): number => Math.min(streak, 10)
 /** Every new account starts with a little pocket money so the shop isn't a dead end. */
 export const STARTING_COINS = 150;
 
+// ----- Avatar style -----
+
+/**
+ * Feature flag: hand-drawn vector pets (src/components/pet-art) vs the old
+ * emoji avatars. Flip to false to revert instantly — both paths are kept.
+ */
+export const USE_VECTOR_PETS = true;
+
 // ----- Limits -----
 
 /** Hard cap on the pack — keeps the home switcher and shop sane. */

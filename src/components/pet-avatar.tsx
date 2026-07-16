@@ -14,7 +14,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
 
-import { speciesInfo } from '@/config/game';
+import { VectorPet } from '@/components/pet-art';
+import { speciesInfo, USE_VECTOR_PETS } from '@/config/game';
 import { DEFAULT_BACKDROP, shopItem, type BackdropItem } from '@/config/shop';
 import type { Pet } from '@/lib/models';
 import { colors } from '@/theme';
@@ -157,21 +158,29 @@ export function PetAvatar({
 
         {/* The pet + its outfit move together */}
         <Animated.View style={[styles.petWrap, petStyle]}>
-          {neckwear && (
-            <Text style={[styles.gear, { bottom: inner * 0.02, fontSize: inner * 0.18, zIndex: 3 }]}>
-              {'emoji' in neckwear ? neckwear.emoji : ''}
-            </Text>
-          )}
-          <Text style={{ fontSize: inner * 0.42, lineHeight: inner * 0.5 }}>{species.emoji}</Text>
-          {headwear && (
-            <Text style={[styles.gear, { top: -inner * 0.115, fontSize: inner * 0.2, zIndex: 3 }]}>
-              {'emoji' in headwear ? headwear.emoji : ''}
-            </Text>
-          )}
-          {eyewear && (
-            <Text style={[styles.gear, { top: inner * 0.13, fontSize: inner * 0.155, zIndex: 4 }]}>
-              {'emoji' in eyewear ? eyewear.emoji : ''}
-            </Text>
+          {USE_VECTOR_PETS ? (
+            <VectorPet species={pet.species} equipped={pet.equipped} size={inner * 0.84} />
+          ) : (
+            // Legacy emoji avatar — kept as the instant fallback for the
+            // vector-art experiment (USE_VECTOR_PETS in config/game.ts).
+            <>
+              {neckwear && (
+                <Text style={[styles.gear, { bottom: inner * 0.02, fontSize: inner * 0.18, zIndex: 3 }]}>
+                  {'emoji' in neckwear ? neckwear.emoji : ''}
+                </Text>
+              )}
+              <Text style={{ fontSize: inner * 0.42, lineHeight: inner * 0.5 }}>{species.emoji}</Text>
+              {headwear && (
+                <Text style={[styles.gear, { top: -inner * 0.115, fontSize: inner * 0.2, zIndex: 3 }]}>
+                  {'emoji' in headwear ? headwear.emoji : ''}
+                </Text>
+              )}
+              {eyewear && (
+                <Text style={[styles.gear, { top: inner * 0.13, fontSize: inner * 0.155, zIndex: 4 }]}>
+                  {'emoji' in eyewear ? eyewear.emoji : ''}
+                </Text>
+              )}
+            </>
           )}
         </Animated.View>
 

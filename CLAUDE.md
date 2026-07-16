@@ -47,7 +47,9 @@ src/
     dates.ts          # day/week period keys, streak continuity helpers
   components/
     ui.tsx            # design system: T (text), Screen, Card, Button, Field, CoinPill…
-    pet-avatar.tsx    # animated emoji pet with XP ring, accessories, backdrop
+    pet-avatar.tsx    # animated pet with XP ring, accessories, backdrop
+    pet-art/          # hand-drawn SVG pets + accessories snapped to anchor points
+                      # (USE_VECTOR_PETS in config/game.ts flips back to emoji)
     celebrations.tsx  # RewardToast + LevelUpModal
   theme/index.ts      # colors, fonts (Fraunces display), radii, spacing
 ```
