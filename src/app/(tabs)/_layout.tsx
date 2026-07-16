@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import React from 'react';
 import { Platform, type ColorValue } from 'react-native';
 
+import { useAuth } from '@/lib/auth-context';
 import { colors, shadow } from '@/theme';
 
 const icon =
@@ -12,6 +13,16 @@ const icon =
   );
 
 export default function TabsLayout() {
+  const { user, initializing, needsVerification } = useAuth();
+
+  // Guard synchronously during render: on a cold start the router mounts this
+  // group before the root layout's redirect effect runs, which used to flash
+  // the empty-den home screen at signed-out users for one frame.
+  if (!initializing) {
+    if (!user) return <Redirect href="/(auth)/welcome" />;
+    if (needsVerification) return <Redirect href="/verify-email" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
