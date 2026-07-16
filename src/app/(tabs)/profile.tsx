@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Card, Screen, T } from '@/components/ui';
-import { speciesInfo } from '@/config/game';
+import { MAX_DISPLAY_NAME_LENGTH, MAX_PETS, speciesInfo } from '@/config/game';
 import { deletePet, setActivePet } from '@/lib/actions';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
@@ -40,7 +40,7 @@ export default function ProfileScreen() {
   const confirmDelete = (petId: string, name: string) => {
     Alert.alert(
       `Say goodbye to ${name}?`,
-      'The pet and its level are removed. Journal entries stay in your history.',
+      'The pet, its level and its routines are removed. Journal entries stay in your history.',
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Remove pet', style: 'destructive', onPress: () => deletePet(petId) },
@@ -66,7 +66,8 @@ export default function ProfileScreen() {
         {
           text: 'Save',
           onPress: async (name?: string) => {
-            const trimmed = (name ?? '').trim();
+            // Alert.prompt has no maxLength, so clamp here.
+            const trimmed = (name ?? '').trim().slice(0, MAX_DISPLAY_NAME_LENGTH);
             if (!trimmed || trimmed === profile?.displayName) return;
             try {
               await updateDisplayName(trimmed);
@@ -183,11 +184,20 @@ export default function ProfileScreen() {
 
         {/* Pets */}
         <View style={styles.sectionHeader}>
-          <T variant="heading">Your pack</T>
+          <T variant="heading">
+            Your pack{pets.length > 0 ? `  ${pets.length}/${MAX_PETS}` : ''}
+          </T>
           <Button
             title="＋ Add"
             variant="outline"
-            onPress={() => router.push('/new-pet')}
+            onPress={() =>
+              pets.length >= MAX_PETS
+                ? Alert.alert(
+                    'Full house!',
+                    `Your pack is at the limit of ${MAX_PETS} pets. Remove one to add another.`,
+                  )
+                : router.push('/new-pet')
+            }
             style={styles.addButton}
           />
         </View>

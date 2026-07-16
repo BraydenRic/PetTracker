@@ -13,7 +13,7 @@ import {
 import { LevelUpModal, RewardToast } from '@/components/celebrations';
 import { PetAvatar } from '@/components/pet-avatar';
 import { Button, Card, CoinPill, Screen, T } from '@/components/ui';
-import { ACTIVITIES, levelProgress, speciesInfo, type ActivityInfo } from '@/config/game';
+import { ACTIVITIES, levelProgress, MAX_PETS, speciesInfo, type ActivityInfo } from '@/config/game';
 import { completeRoutine, isRoutineDone, logActivity, setActivePet, type LogResult } from '@/lib/actions';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
@@ -152,9 +152,11 @@ export default function HomeScreen() {
                   </Text>
                 </Pressable>
               ))}
-              <Pressable onPress={() => router.push('/new-pet')} style={styles.petChip}>
-                <Text style={styles.petChipText}>＋ New</Text>
-              </Pressable>
+              {pets.length < MAX_PETS && (
+                <Pressable onPress={() => router.push('/new-pet')} style={styles.petChip}>
+                  <Text style={styles.petChipText}>＋ New</Text>
+                </Pressable>
+              )}
             </View>
           </ScrollView>
         )}

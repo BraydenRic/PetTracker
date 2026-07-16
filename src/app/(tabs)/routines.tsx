@@ -15,7 +15,13 @@ import {
 } from 'react-native';
 
 import { Button, Card, EmptyState, Field, Screen, T } from '@/components/ui';
-import { ACTIVITIES, activityInfo, speciesInfo, type ActivityType } from '@/config/game';
+import {
+  ACTIVITIES,
+  activityInfo,
+  MAX_ROUTINE_TITLE_LENGTH,
+  speciesInfo,
+  type ActivityType,
+} from '@/config/game';
 import { addRoutine, completeRoutine, deleteRoutine, updateRoutine } from '@/lib/actions';
 import { useData } from '@/lib/data-context';
 import {
@@ -77,16 +83,20 @@ function RoutineRow({
   onEdit: (routine: Routine) => void;
 }) {
   const { pets } = useData();
+  const [checking, setChecking] = useState(false);
   const pet = pets.find((p) => p.id === routine.petId);
   const info = activityInfo(routine.activityType);
 
   const onCheck = async () => {
-    if (!pet) return;
+    if (!pet || checking) return; // guard double-taps while the write is in flight
+    setChecking(true);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     try {
       await completeRoutine(routine, pet);
     } catch (err) {
       Alert.alert('Could not complete', (err as Error).message);
+    } finally {
+      setChecking(false);
     }
   };
 
@@ -332,6 +342,7 @@ function RoutineModal({ routine, onClose }: { routine?: Routine; onClose: () => 
               value={title}
               onChangeText={setTitle}
               placeholder={suggestedTitle}
+              maxLength={MAX_ROUTINE_TITLE_LENGTH}
               style={{ marginTop: space(4) }}
             />
 

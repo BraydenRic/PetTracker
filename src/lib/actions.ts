@@ -4,14 +4,20 @@ import {
   deleteDoc,
   doc,
   getDocs,
+  query,
   runTransaction,
   updateDoc,
+  where,
 } from 'firebase/firestore';
 
 import {
   activityInfo,
   levelFromXp,
   levelUpBonus,
+  MAX_PET_NAME_LENGTH,
+  MAX_PETS,
+  MAX_ROUTINE_TITLE_LENGTH,
+  MAX_ROUTINES_PER_PET,
   ROUTINE_XP_MULTIPLIER,
   streakBonusCoins,
   type ActivityType,
@@ -39,8 +45,15 @@ export interface LogResult {
 
 export async function addPet(name: string, species: SpeciesKey): Promise<string> {
   const userId = uid();
+  const trimmed = name.trim().slice(0, MAX_PET_NAME_LENGTH);
+  if (!trimmed) throw new Error('Your pet needs a name.');
+  // Re-check the cap here, not just in the UI, in case a stale screen submits.
+  const existing = await getDocs(collection(db, 'users', userId, 'pets'));
+  if (existing.size >= MAX_PETS) {
+    throw new Error(`Your pack is full — ${MAX_PETS} pets max. Remove one in Profile first.`);
+  }
   const ref = await addDoc(collection(db, 'users', userId, 'pets'), {
-    name: name.trim(),
+    name: trimmed,
     species,
     xp: 0,
     level: 1,
@@ -63,12 +76,20 @@ export async function setActivePet(petId: string): Promise<void> {
 }
 
 export async function renamePet(petId: string, name: string): Promise<void> {
-  await updateDoc(doc(db, 'users', uid(), 'pets', petId), { name: name.trim() });
+  const trimmed = name.trim().slice(0, MAX_PET_NAME_LENGTH);
+  if (!trimmed) throw new Error('Your pet needs a name.');
+  await updateDoc(doc(db, 'users', uid(), 'pets', petId), { name: trimmed });
 }
 
 export async function deletePet(petId: string): Promise<void> {
   const userId = uid();
   await deleteDoc(doc(db, 'users', userId, 'pets', petId));
+  // The pet's routines would otherwise linger as un-completable "No pet" rows.
+  // Journal entries stay — they're history and carry their own petName.
+  const orphaned = await getDocs(
+    query(collection(db, 'users', userId, 'routines'), where('petId', '==', petId)),
+  );
+  await Promise.all(orphaned.docs.map((d) => deleteDoc(d.ref)));
   await runTransaction(db, async (tx) => {
     const userRef = doc(db, 'users', userId);
     const snap = await tx.get(userRef);
@@ -177,6 +198,14 @@ export async function deleteActivity(activity: Activity): Promise<void> {
 
 // ---------- Routines ----------
 
+/** How many routines a pet already has (used to enforce the per-pet cap). */
+async function routineCountForPet(userId: string, petId: string, excludeId?: string): Promise<number> {
+  const snap = await getDocs(
+    query(collection(db, 'users', userId, 'routines'), where('petId', '==', petId)),
+  );
+  return snap.docs.filter((d) => d.id !== excludeId).length;
+}
+
 export async function addRoutine(
   petId: string,
   title: string,
@@ -185,9 +214,13 @@ export async function addRoutine(
   timeOfDay: string | null = null,
   days: number[] | null = null,
 ): Promise<void> {
-  await addDoc(collection(db, 'users', uid(), 'routines'), {
+  const userId = uid();
+  if ((await routineCountForPet(userId, petId)) >= MAX_ROUTINES_PER_PET) {
+    throw new Error(`That pet already has ${MAX_ROUTINES_PER_PET} routines — the max. Remove one first.`);
+  }
+  await addDoc(collection(db, 'users', userId, 'routines'), {
     petId,
-    title: title.trim(),
+    title: title.trim().slice(0, MAX_ROUTINE_TITLE_LENGTH),
     activityType,
     frequency,
     timeOfDay,
@@ -216,9 +249,14 @@ export async function updateRoutine(
     days: number[] | null;
   },
 ): Promise<void> {
-  await updateDoc(doc(db, 'users', uid(), 'routines', routineId), {
+  const userId = uid();
+  // Moving a routine to another pet must respect that pet's cap too.
+  if ((await routineCountForPet(userId, data.petId, routineId)) >= MAX_ROUTINES_PER_PET) {
+    throw new Error(`That pet already has ${MAX_ROUTINES_PER_PET} routines — the max. Remove one first.`);
+  }
+  await updateDoc(doc(db, 'users', userId, 'routines', routineId), {
     ...data,
-    title: data.title.trim(),
+    title: data.title.trim().slice(0, MAX_ROUTINE_TITLE_LENGTH),
   });
 }
 
@@ -233,17 +271,27 @@ export const isRoutineDone = (routine: Routine, now: Date = new Date()): boolean
 export async function completeRoutine(routine: Routine, pet: Pet): Promise<LogResult | null> {
   const userId = uid();
   const key = periodKey(routine.frequency);
-  if (routine.completions?.[key]) return null; // already done this period
 
-  const continued = routine.lastCompletedKey === previousScheduledKey(routine);
-  const newStreak = continued ? routine.streak + 1 : 1;
+  // Read-and-mark in one transaction: a double-tap (or a second device) sees
+  // the completion already recorded and bails instead of double-awarding XP.
+  const newStreak = await runTransaction(db, async (tx) => {
+    const ref = doc(db, 'users', userId, 'routines', routine.id);
+    const snap = await tx.get(ref);
+    if (!snap.exists()) return null; // routine deleted meanwhile
+    const fresh = snap.data() as Routine;
+    if (fresh.completions?.[key]) return null; // already done this period
 
-  await updateDoc(doc(db, 'users', userId, 'routines', routine.id), {
-    [`completions.${key}`]: Date.now(),
-    lastCompletedKey: key,
-    streak: newStreak,
-    bestStreak: Math.max(newStreak, routine.bestStreak ?? 0),
+    const continued = fresh.lastCompletedKey === previousScheduledKey(fresh);
+    const streak = continued ? (fresh.streak ?? 0) + 1 : 1;
+    tx.update(ref, {
+      [`completions.${key}`]: Date.now(),
+      lastCompletedKey: key,
+      streak,
+      bestStreak: Math.max(streak, fresh.bestStreak ?? 0),
+    });
+    return streak;
   });
+  if (newStreak === null) return null;
 
   return logActivity(pet, routine.activityType, {
     routineId: routine.id,

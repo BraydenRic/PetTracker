@@ -4,12 +4,14 @@ import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { Button, Field, FormScroll, Screen, T } from '@/components/ui';
-import { SPECIES, type SpeciesKey } from '@/config/game';
+import { MAX_PET_NAME_LENGTH, MAX_PETS, SPECIES, type SpeciesKey } from '@/config/game';
 import { addPet } from '@/lib/actions';
+import { useData } from '@/lib/data-context';
 import { colors, radius, space } from '@/theme';
 
 export default function NewPetScreen() {
   const router = useRouter();
+  const { pets } = useData();
   const [species, setSpecies] = useState<SpeciesKey | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -32,6 +34,24 @@ export default function NewPetScreen() {
   };
 
   const chosen = SPECIES.find((s) => s.key === species);
+
+  // The pack is capped — show a friendly dead end instead of a form that
+  // would only fail on submit.
+  if (pets.length >= MAX_PETS) {
+    return (
+      <Screen edges={['top', 'bottom']} style={styles.fullScreen}>
+        <Text style={{ fontSize: 64 }}>🏠</Text>
+        <T variant="display" style={{ textAlign: 'center' }}>
+          Full house!
+        </T>
+        <T variant="body" style={{ color: colors.sub, textAlign: 'center' }}>
+          Your pack is at the limit of {MAX_PETS} pets. To welcome someone new, say goodbye to a
+          pet from your Profile first.
+        </T>
+        <Button title="Got it" onPress={() => router.back()} style={{ alignSelf: 'stretch', marginTop: space(4) }} />
+      </Screen>
+    );
+  }
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -67,7 +87,7 @@ export default function NewPetScreen() {
               onChangeText={setName}
               placeholder="e.g. Biscuit"
               autoFocus
-              maxLength={24}
+              maxLength={MAX_PET_NAME_LENGTH}
             />
             <Button
               title={name.trim() ? `Welcome home, ${name.trim()}! ${chosen.emoji}` : 'Name your pet'}
@@ -87,6 +107,12 @@ export default function NewPetScreen() {
 const styles = StyleSheet.create({
   content: {
     padding: space(6),
+  },
+  fullScreen: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: space(8),
+    gap: space(3),
   },
   speciesGrid: {
     flexDirection: 'row',

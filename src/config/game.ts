@@ -120,3 +120,16 @@ export const streakBonusCoins = (streak: number): number => Math.min(streak, 10)
 
 /** Every new account starts with a little pocket money so the shop isn't a dead end. */
 export const STARTING_COINS = 150;
+
+// ----- Limits -----
+
+/** Hard cap on the pack — keeps the home switcher and shop sane. */
+export const MAX_PETS = 5;
+
+/** Per-pet routine cap so the calendar stays readable (and un-farmable). */
+export const MAX_ROUTINES_PER_PET = 10;
+
+/** Input length caps, enforced in the UI and re-checked in actions. */
+export const MAX_PET_NAME_LENGTH = 24;
+export const MAX_ROUTINE_TITLE_LENGTH = 40;
+export const MAX_DISPLAY_NAME_LENGTH = 30;
