@@ -56,6 +56,10 @@ pet,care,tracker,routine,dog,cat,walk,feeding,reminder,streak,journal,habit
 
 https://github.com/BraydenRic/PetTracker
 
+## Support email
+
+tendpettracker@gmail.com (also the App Review contact address)
+
 ## Privacy Policy URL
 
 https://braydenric.github.io/PetTracker/
