@@ -209,6 +209,8 @@ function RoutineModal({ routine, onClose }: { routine?: Routine; onClose: () => 
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.modalOverlay}>
+        {/* Tapping the dimmed area above the sheet dismisses it, like Cancel. */}
+        <Pressable style={{ flex: 1 }} onPress={onClose} />
         <View style={styles.modalSheet}>
           <ScrollView showsVerticalScrollIndicator={false}>
             <T variant="title">{routine ? 'Edit routine' : 'New routine'}</T>
