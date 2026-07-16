@@ -323,7 +323,7 @@ export default function ProfileScreen() {
           style={{ marginTop: space(3) }}
         />
         <T variant="caption" style={styles.footer}>
-          PetTracker · made with 🐾
+          Tend · made with 🐾
         </T>
       </ScrollView>
     </Screen>

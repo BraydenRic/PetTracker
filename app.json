@@ -1,18 +1,23 @@
 {
   "expo": {
-    "name": "PetTracker",
-    "slug": "pettracker",
+    "name": "Tend",
+    "slug": "tend",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "pettracker",
+    "scheme": "tend",
     "userInterfaceStyle": "light",
     "ios": {
-      "bundleIdentifier": "com.brayden.pettracker",
-      "usesAppleSignIn": true
+      "bundleIdentifier": "com.brayden.tend",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
-      "package": "com.brayden.pettracker",
+      "package": "com.brayden.tend",
       "adaptiveIcon": {
         "backgroundColor": "#FDF8EF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -41,6 +46,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "5c5f2f7a-7cb4-4e6d-940f-ab82dcb1aaed"
+      }
+    },
+    "owner": "lm1"
   }
 }

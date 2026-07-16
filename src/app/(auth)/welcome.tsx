@@ -57,7 +57,7 @@ export default function WelcomeScreen() {
 
         <Text style={styles.paw}>🐾</Text>
         <T variant="display" style={styles.wordmark}>
-          PetTracker
+          Tend
         </T>
         <T variant="body" style={styles.tagline}>
           Log the walks. Earn the treats.{'\n'}Watch your best friend level up.
