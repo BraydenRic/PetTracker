@@ -50,7 +50,7 @@ export default function SignUpScreen() {
               value={name}
               onChangeText={setName}
               autoComplete="name"
-              placeholder="Brayden"
+              placeholder="What should we call you?"
             />
             <Field
               label="EMAIL"
