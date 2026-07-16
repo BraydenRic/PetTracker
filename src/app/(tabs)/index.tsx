@@ -15,7 +15,14 @@ import { LevelUpModal, RewardToast } from '@/components/celebrations';
 import { PetAvatar } from '@/components/pet-avatar';
 import { Button, Card, CoinPill, Screen, T } from '@/components/ui';
 import { ACTIVITIES, levelProgress, MAX_PETS, speciesInfo, type ActivityInfo } from '@/config/game';
-import { completeRoutine, isRoutineDone, logActivity, setActivePet, type LogResult } from '@/lib/actions';
+import {
+  completeRoutine,
+  isRoutineDone,
+  logActivity,
+  routineOrderKey,
+  setActivePet,
+  type LogResult,
+} from '@/lib/actions';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
 import { formatTimeOfDay, isScheduledOn } from '@/lib/dates';
@@ -53,7 +60,7 @@ export default function HomeScreen() {
         .filter(
           (r) => r.petId === activePet?.id && !isRoutineDone(r) && isScheduledOn(r, new Date()),
         )
-        .sort((a, b) => (a.timeOfDay ?? '99:99').localeCompare(b.timeOfDay ?? '99:99')),
+        .sort((a, b) => routineOrderKey(a) - routineOrderKey(b)),
     [routines, activePet?.id],
   );
 

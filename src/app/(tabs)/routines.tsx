@@ -22,7 +22,14 @@ import {
   speciesInfo,
   type ActivityType,
 } from '@/config/game';
-import { addRoutine, completeRoutine, deleteRoutine, updateRoutine } from '@/lib/actions';
+import {
+  addRoutine,
+  completeRoutine,
+  deleteRoutine,
+  routineOrderKey,
+  swapRoutineOrder,
+  updateRoutine,
+} from '@/lib/actions';
 import { useData } from '@/lib/data-context';
 import {
   addDays,
@@ -41,8 +48,8 @@ import { colors, fonts, radius, space } from '@/theme';
 /** How a routine relates to the day/week the user is looking at. */
 type SlotState = 'done' | 'missed' | 'due' | 'upcoming';
 
-const sortByTime = (a: Routine, b: Routine) =>
-  (a.timeOfDay ?? '99:99').localeCompare(b.timeOfDay ?? '99:99');
+/** Manual order (falls back to creation order) — users rearrange via long-press. */
+const byOrder = (a: Routine, b: Routine) => routineOrderKey(a) - routineOrderKey(b);
 
 function StateBadge({ state, onCheck }: { state: SlotState; onCheck?: () => void }) {
   if (state === 'due') {
@@ -77,10 +84,13 @@ function RoutineRow({
   routine,
   state,
   onEdit,
+  onMove,
 }: {
   routine: Routine;
   state: SlotState;
   onEdit: (routine: Routine) => void;
+  /** Move within the visible list; moving past the ends is a no-op. */
+  onMove: (routine: Routine, direction: -1 | 1) => void;
 }) {
   const { pets } = useData();
   const [checking, setChecking] = useState(false);
@@ -101,9 +111,19 @@ function RoutineRow({
   };
 
   const onLongPress = () => {
-    Alert.alert('Delete routine?', `"${routine.title}" and its streak will be gone for good.`, [
+    Alert.alert(routine.title, 'Rearrange or remove this routine.', [
+      { text: '↑ Move up', onPress: () => onMove(routine, -1) },
+      { text: '↓ Move down', onPress: () => onMove(routine, 1) },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Delete routine?', `"${routine.title}" and its streak will be gone for good.`, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Delete', style: 'destructive', onPress: () => deleteRoutine(routine.id) },
+          ]),
+      },
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => deleteRoutine(routine.id) },
     ]);
   };
 
@@ -382,8 +402,17 @@ export default function RoutinesScreen() {
     [weekStart.getTime()],
   );
 
-  const daily = useMemo(() => routines.filter((r) => r.frequency === 'daily').sort(sortByTime), [routines]);
-  const weekly = useMemo(() => routines.filter((r) => r.frequency === 'weekly').sort(sortByTime), [routines]);
+  const daily = useMemo(() => routines.filter((r) => r.frequency === 'daily').sort(byOrder), [routines]);
+  const weekly = useMemo(() => routines.filter((r) => r.frequency === 'weekly').sort(byOrder), [routines]);
+
+  // Swap with the neighbor in the list as displayed (the day-filtered view),
+  // so "move up" always does what it visually looks like it should.
+  const moveWithin = (list: Routine[]) => (r: Routine, dir: -1 | 1) => {
+    const i = list.findIndex((x) => x.id === r.id);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= list.length) return;
+    swapRoutineOrder(list[i], list[j]).catch(() => {});
+  };
 
   // A routine only "exists" from the day it was created — earlier days must not
   // show it (or count it as missed). Keys are zero-padded so string compare works.
@@ -532,36 +561,52 @@ export default function RoutinesScreen() {
         )}
 
         {/* Selected day — only routines that existed by then and run on that weekday */}
-        {daily.filter((r) => existsOnDay(r, selKey) && isScheduledOn(r, selectedDay)).length > 0 && (
-          <>
-            <T variant="heading" style={styles.section}>
-              {dayLabel}
-            </T>
-            <View style={{ gap: space(2.5) }}>
-              {daily
-                .filter((r) => existsOnDay(r, selKey) && isScheduledOn(r, selectedDay))
-                .map((r) => (
-                  <RoutineRow key={r.id} routine={r} state={dayState(r)} onEdit={setEditing} />
+        {(() => {
+          const dayList = daily.filter((r) => existsOnDay(r, selKey) && isScheduledOn(r, selectedDay));
+          if (dayList.length === 0) return null;
+          return (
+            <>
+              <T variant="heading" style={styles.section}>
+                {dayLabel}
+              </T>
+              <View style={{ gap: space(2.5) }}>
+                {dayList.map((r) => (
+                  <RoutineRow
+                    key={r.id}
+                    routine={r}
+                    state={dayState(r)}
+                    onEdit={setEditing}
+                    onMove={moveWithin(dayList)}
+                  />
                 ))}
-            </View>
-          </>
-        )}
+              </View>
+            </>
+          );
+        })()}
 
         {/* The viewed week */}
-        {weekly.filter((r) => existsInWeek(r, selWeekKey)).length > 0 && (
-          <>
-            <T variant="heading" style={styles.section}>
-              {weekOffset === 0 ? 'Anytime this week' : 'That week'}
-            </T>
-            <View style={{ gap: space(2.5) }}>
-              {weekly
-                .filter((r) => existsInWeek(r, selWeekKey))
-                .map((r) => (
-                  <RoutineRow key={r.id} routine={r} state={weekState(r)} onEdit={setEditing} />
+        {(() => {
+          const weekList = weekly.filter((r) => existsInWeek(r, selWeekKey));
+          if (weekList.length === 0) return null;
+          return (
+            <>
+              <T variant="heading" style={styles.section}>
+                {weekOffset === 0 ? 'Anytime this week' : 'That week'}
+              </T>
+              <View style={{ gap: space(2.5) }}>
+                {weekList.map((r) => (
+                  <RoutineRow
+                    key={r.id}
+                    routine={r}
+                    state={weekState(r)}
+                    onEdit={setEditing}
+                    onMove={moveWithin(weekList)}
+                  />
                 ))}
-            </View>
-          </>
-        )}
+              </View>
+            </>
+          );
+        })()}
 
         {/* Everything actually logged that day, routines or not */}
         {dayActivities.length > 0 && (
@@ -596,7 +641,8 @@ export default function RoutinesScreen() {
 
         {routines.length > 0 && (
           <T variant="caption" style={{ textAlign: 'center', marginTop: space(5) }}>
-            Check-offs earn 1.5× XP plus streak coins. Tap a routine to edit it.
+            Check-offs earn 1.5× XP plus streak coins. Tap a routine to edit it, long-press to
+            rearrange or delete.
           </T>
         )}
       </ScrollView>

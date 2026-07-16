@@ -265,6 +265,20 @@ export async function updateRoutine(
   });
 }
 
+/** Effective sort key: manual position if set, else creation order. */
+export const routineOrderKey = (r: Routine): number => r.order ?? r.createdAt;
+
+/** Swap two routines' positions by exchanging their effective sort keys. */
+export async function swapRoutineOrder(a: Routine, b: Routine): Promise<void> {
+  const userId = uid();
+  const aKey = routineOrderKey(a);
+  const bKey = routineOrderKey(b);
+  await Promise.all([
+    updateDoc(doc(db, 'users', userId, 'routines', a.id), { order: bKey }),
+    updateDoc(doc(db, 'users', userId, 'routines', b.id), { order: aKey }),
+  ]);
+}
+
 export const isRoutineDone = (routine: Routine, now: Date = new Date()): boolean =>
   !!routine.completions?.[periodKey(routine.frequency, now)];
 

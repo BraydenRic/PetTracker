@@ -64,6 +64,8 @@ export interface Routine {
   /** For daily routines: which weekdays it runs (Mon=0 .. Sun=6). null/empty = every day. */
   days: number[] | null;
   /** Period keys (YYYY-MM-DD or YYYY-Wnn) that have been completed. */
+  /** Manual sort position; missing = fall back to createdAt (creation order). */
+  order?: number;
   completions: Record<string, number>;
   lastCompletedKey: string | null;
   streak: number;
