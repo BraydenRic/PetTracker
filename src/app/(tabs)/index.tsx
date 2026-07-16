@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useMemo, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   Pressable,
   ScrollView,
@@ -92,6 +93,17 @@ export default function HomeScreen() {
       setLogging(false);
     }
   };
+
+  // While the first Firestore snapshots arrive (right after sign-in), hold a
+  // quiet loading state — otherwise the petless layout flashes for a beat.
+  if (loading) {
+    return (
+      <Screen style={styles.adoptScreen}>
+        <Text style={{ fontSize: 52 }}>🐾</Text>
+        <ActivityIndicator color={colors.accent} />
+      </Screen>
+    );
+  }
 
   // ----- Empty state: adopt the first pet -----
   if (!loading && pets.length === 0) {
