@@ -12,9 +12,10 @@
 export const GOOGLE_AUTH = {
   // Firebase's auto-provisioned web client for pettracker-682e8.
   webClientId: '308784679328-7i32mabkgep295geid4lcm5fq515fi1j.apps.googleusercontent.com',
-  // For smoother native Google sign-in, create iOS/Android OAuth clients in
-  // Google Cloud Console → Credentials and paste them here (needs a dev build).
-  iosClientId: '',
+  // Auto-provisioned when the iOS app was registered on the Firebase project.
+  // Its reversed form must stay in app.json's "scheme" array — that's how
+  // Google's redirect re-opens the standalone app.
+  iosClientId: '308784679328-2o0ppph4d9acjcvilichgmk3vbttbeg0.apps.googleusercontent.com',
   androidClientId: '',
 };
 
