@@ -15,6 +15,8 @@ export interface Pet {
   id: string;
   name: string;
   species: SpeciesKey;
+  /** Coat (breed palette) id from pet-art; missing = species default coat. */
+  coat?: string | null;
   xp: number;
   level: number;
   /** Shop items this pet owns — each pet has its own collection. */

@@ -3,8 +3,10 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { VectorPet } from '@/components/pet-art';
+import { PET_ART } from '@/components/pet-art/pets';
 import { Button, Field, FormScroll, Screen, T } from '@/components/ui';
-import { MAX_PET_NAME_LENGTH, MAX_PETS, SPECIES, type SpeciesKey } from '@/config/game';
+import { MAX_PET_NAME_LENGTH, MAX_PETS, SPECIES, USE_VECTOR_PETS, type SpeciesKey } from '@/config/game';
 import { addPet } from '@/lib/actions';
 import { useData } from '@/lib/data-context';
 import { colors, radius, space } from '@/theme';
@@ -13,6 +15,7 @@ export default function NewPetScreen() {
   const router = useRouter();
   const { pets } = useData();
   const [species, setSpecies] = useState<SpeciesKey | null>(null);
+  const [coat, setCoat] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -24,7 +27,7 @@ export default function NewPetScreen() {
     }
     setBusy(true);
     try {
-      await addPet(name, species);
+      await addPet(name, species, coat);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       router.back();
     } catch (err) {
@@ -68,6 +71,7 @@ export default function NewPetScreen() {
               onPress={() => {
                 Haptics.selectionAsync();
                 setSpecies(s.key);
+                setCoat(null); // back to the species' default coat
               }}
               style={[styles.speciesCell, species === s.key && styles.speciesCellActive]}>
               <Text style={{ fontSize: 34 }}>{s.emoji}</Text>
@@ -78,6 +82,34 @@ export default function NewPetScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* Coat picker — live previews of each breed palette */}
+        {chosen && USE_VECTOR_PETS && (
+          <View style={{ marginTop: space(5) }}>
+            <T variant="label" style={{ marginBottom: space(2) }}>
+              PICK THEIR LOOK
+            </T>
+            <View style={{ flexDirection: 'row', gap: space(2.5) }}>
+              {PET_ART[chosen.key].coats.map((k) => {
+                const selected = coat === k.id || (!coat && k.id === PET_ART[chosen.key].coats[0].id);
+                return (
+                  <Pressable
+                    key={k.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setCoat(k.id);
+                    }}
+                    style={[styles.coatCell, selected && styles.speciesCellActive]}>
+                    <VectorPet species={chosen.key} coat={k.id} size={62} />
+                    <Text style={[styles.speciesLabel, selected && { color: colors.accentDark }]}>
+                      {k.label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        )}
 
         {chosen && (
           <View style={{ gap: space(4), marginTop: space(5) }}>
@@ -134,6 +166,16 @@ const styles = StyleSheet.create({
   speciesCellActive: {
     borderColor: colors.accent,
     backgroundColor: colors.accentSoft,
+  },
+  coatCell: {
+    flex: 1,
+    alignItems: 'center',
+    gap: space(1),
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.line,
+    borderRadius: radius.md,
+    paddingVertical: space(3),
   },
   speciesLabel: {
     fontSize: 12.5,

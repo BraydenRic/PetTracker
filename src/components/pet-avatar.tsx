@@ -159,7 +159,7 @@ export function PetAvatar({
         {/* The pet + its outfit move together */}
         <Animated.View style={[styles.petWrap, petStyle]}>
           {USE_VECTOR_PETS ? (
-            <VectorPet species={pet.species} equipped={pet.equipped} size={inner * 0.84} />
+            <VectorPet species={pet.species} coat={pet.coat} equipped={pet.equipped} size={inner * 0.84} />
           ) : (
             // Legacy emoji avatar — kept as the instant fallback for the
             // vector-art experiment (USE_VECTOR_PETS in config/game.ts).

@@ -43,7 +43,11 @@ export interface LogResult {
 
 // ---------- Pets ----------
 
-export async function addPet(name: string, species: SpeciesKey): Promise<string> {
+export async function addPet(
+  name: string,
+  species: SpeciesKey,
+  coat: string | null = null,
+): Promise<string> {
   const userId = uid();
   const trimmed = name.trim().slice(0, MAX_PET_NAME_LENGTH);
   if (!trimmed) throw new Error('Your pet needs a name.');
@@ -55,6 +59,7 @@ export async function addPet(name: string, species: SpeciesKey): Promise<string>
   const ref = await addDoc(collection(db, 'users', userId, 'pets'), {
     name: trimmed,
     species,
+    coat,
     xp: 0,
     level: 1,
     ownedItemIds: [],

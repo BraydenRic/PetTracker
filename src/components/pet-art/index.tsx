@@ -8,7 +8,7 @@ import Svg, { Ellipse, G } from 'react-native-svg';
 import type { SpeciesKey } from '@/config/game';
 import type { Pet } from '@/lib/models';
 import { ACCESSORY_ART } from './accessories';
-import { PET_ART, type PetAnchors } from './pets';
+import { coatFor, PET_ART, type PetAnchors } from './pets';
 
 const SLOT_ANCHOR = {
   headwear: 'head',
@@ -36,10 +36,13 @@ export function AccessoryPreview({ itemId, size }: { itemId: string; size: numbe
 
 export function VectorPet({
   species,
+  coat,
   equipped,
   size,
 }: {
   species: SpeciesKey;
+  /** Coat (breed palette) id; falls back to the species' first coat. */
+  coat?: string | null;
   equipped?: Pet['equipped'];
   size: number;
 }) {
@@ -49,7 +52,7 @@ export function VectorPet({
     <Svg width={size} height={size} viewBox="0 0 100 100">
       {/* soft ground shadow */}
       <Ellipse cx={50} cy={95.5} rx={24} ry={3.5} fill="#2B2118" opacity={0.08} />
-      <def.Art />
+      <def.Art c={coatFor(def, coat).c} />
       {WEAR_ORDER.map((slot) => {
         const itemId = equipped?.[slot];
         const art = itemId ? ACCESSORY_ART[itemId] : undefined;
