@@ -3,6 +3,7 @@ import {
   Fraunces_700Bold,
   useFonts,
 } from '@expo-google-fonts/fraunces';
+import * as Notifications from 'expo-notifications';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
@@ -11,6 +12,16 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { AuthProvider, useAuth } from '@/lib/auth-context';
 import { DataProvider } from '@/lib/data-context';
 import { colors } from '@/theme';
+
+// Show routine reminders as a quiet banner even while the app is open.
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowBanner: true,
+    shouldShowList: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 function LoadingScreen() {
   return (

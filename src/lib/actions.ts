@@ -26,7 +26,7 @@ import {
 import { shopItem, type AccessorySlot } from '@/config/shop';
 import { auth, db } from '@/lib/firebase';
 import { periodKey, previousScheduledKey } from '@/lib/dates';
-import type { Activity, Pet, Routine, RoutineFrequency } from '@/lib/models';
+import type { Activity, Pet, ReminderPrefs, Routine, RoutineFrequency } from '@/lib/models';
 
 const uid = (): string => {
   const u = auth.currentUser;
@@ -304,6 +304,12 @@ export async function completeRoutine(routine: Routine, pet: Pet): Promise<LogRe
     bonusCoins: streakBonusCoins(newStreak),
     note: routine.title,
   });
+}
+
+/** Saved on the user doc so preferences follow the account across devices;
+ * the actual notification scheduling reacts via the data-context sync. */
+export async function setReminderPrefs(prefs: ReminderPrefs): Promise<void> {
+  await updateDoc(doc(db, 'users', uid()), { reminders: prefs });
 }
 
 // ---------- Account deletion ----------

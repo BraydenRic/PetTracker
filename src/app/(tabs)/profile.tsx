@@ -1,13 +1,18 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useMemo } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Button, Card, Screen, T } from '@/components/ui';
 import { MAX_DISPLAY_NAME_LENGTH, MAX_PETS, speciesInfo } from '@/config/game';
-import { deletePet, setActivePet } from '@/lib/actions';
+import { deletePet, setActivePet, setReminderPrefs } from '@/lib/actions';
 import { useAuth } from '@/lib/auth-context';
 import { useData } from '@/lib/data-context';
+import {
+  DEFAULT_REMINDER_PREFS,
+  ensureNotificationPermission,
+  REMINDER_OFFSETS,
+} from '@/lib/reminders';
 import { colors, fonts, radius, space } from '@/theme';
 
 function Stat({ value, label }: { value: string | number; label: string }) {
@@ -36,6 +41,31 @@ export default function ProfileScreen() {
     : providers.includes('apple.com')
       ? 'Apple'
       : 'Email';
+
+  const reminderPrefs = profile?.reminders ?? DEFAULT_REMINDER_PREFS;
+
+  const toggleReminders = async (on: boolean) => {
+    if (on && !(await ensureNotificationPermission())) {
+      Alert.alert(
+        'Notifications are off',
+        'Allow notifications for this app in the iOS Settings app, then flip this switch again.',
+      );
+      return;
+    }
+    try {
+      await setReminderPrefs({ ...reminderPrefs, enabled: on });
+    } catch {
+      Alert.alert("Couldn't save", 'Check your connection and try again.');
+    }
+  };
+
+  const setReminderOffset = async (offsetMinutes: number) => {
+    try {
+      await setReminderPrefs({ ...reminderPrefs, offsetMinutes });
+    } catch {
+      Alert.alert("Couldn't save", 'Check your connection and try again.');
+    }
+  };
 
   const confirmDelete = (petId: string, name: string) => {
     Alert.alert(
@@ -182,6 +212,45 @@ export default function ProfileScreen() {
           <Stat value={stats.bestStreak > 0 ? `🔥 ${stats.bestStreak}` : '—'} label="Best streak" />
         </Card>
 
+        {/* Reminders */}
+        <Card style={styles.remindersCard}>
+          <View style={styles.reminderHeader}>
+            <View style={{ flex: 1 }}>
+              <T variant="body" style={{ fontWeight: '700' }}>
+                Routine reminders
+              </T>
+              <T variant="caption">For routines with a set time</T>
+            </View>
+            <Switch
+              value={reminderPrefs.enabled}
+              onValueChange={toggleReminders}
+              trackColor={{ true: colors.accent }}
+            />
+          </View>
+          {reminderPrefs.enabled && (
+            <>
+              <T variant="label" style={{ marginTop: space(3.5), marginBottom: space(2) }}>
+                REMIND ME
+              </T>
+              <View style={styles.offsetRow}>
+                {REMINDER_OFFSETS.map((o) => {
+                  const on = reminderPrefs.offsetMinutes === o.value;
+                  return (
+                    <Pressable
+                      key={o.value}
+                      onPress={() => setReminderOffset(o.value)}
+                      style={[styles.offsetPill, on && styles.offsetPillActive]}>
+                      <Text style={[styles.offsetText, on && { color: colors.white }]}>
+                        {o.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </>
+          )}
+        </Card>
+
         {/* Pets */}
         <View style={styles.sectionHeader}>
           <T variant="heading">
@@ -325,6 +394,36 @@ const styles = StyleSheet.create({
     width: 1,
     height: 34,
     backgroundColor: colors.line,
+  },
+  remindersCard: {
+    marginTop: space(3),
+  },
+  reminderHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: space(3),
+  },
+  offsetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: space(2),
+  },
+  offsetPill: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.line,
+    borderRadius: 999,
+    paddingHorizontal: space(3),
+    paddingVertical: space(1.5),
+  },
+  offsetPillActive: {
+    backgroundColor: colors.ink,
+    borderColor: colors.ink,
+  },
+  offsetText: {
+    fontSize: 12.5,
+    fontWeight: '600',
+    color: colors.ink,
   },
   sectionHeader: {
     flexDirection: 'row',

@@ -11,6 +11,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { useAuth } from '@/lib/auth-context';
 import { db } from '@/lib/firebase';
 import type { Activity, Pet, Profile, Routine } from '@/lib/models';
+import { DEFAULT_REMINDER_PREFS, syncReminders } from '@/lib/reminders';
 
 interface DataState {
   profile: Profile | null;
@@ -80,6 +81,22 @@ export function DataProvider({ children }: { children: React.ReactNode }) {
     ];
     return () => unsubs.forEach((u) => u());
   }, [uid]);
+
+  // Rebuild the device's local notification schedule whenever routines or the
+  // reminder settings change. The signature only includes fields that affect
+  // scheduling, so completions/streak updates don't cause pointless rebuilds.
+  const prefs = profile?.reminders ?? DEFAULT_REMINDER_PREFS;
+  const reminderSignature = JSON.stringify([
+    prefs,
+    routines.map((r) => [r.id, r.title, r.frequency, r.timeOfDay, r.days]),
+  ]);
+  useEffect(() => {
+    if (!uid) return;
+    syncReminders(routines, prefs).catch(() => {
+      // Scheduling is best-effort — never let a notification error break the app.
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, reminderSignature]);
 
   const activePet = useMemo(() => {
     if (!pets.length) return null;

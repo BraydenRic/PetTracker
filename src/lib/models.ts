@@ -1,12 +1,21 @@
 import type { ActivityType, SpeciesKey } from '@/config/game';
 import type { AccessorySlot } from '@/config/shop';
 
+/** Routine reminder settings (synced on the user doc; scheduling is per-device). */
+export interface ReminderPrefs {
+  enabled: boolean;
+  /** Minutes relative to the routine's set time — negative fires before it. */
+  offsetMinutes: number;
+}
+
 /** users/{uid} */
 export interface Profile {
   email: string | null;
   displayName: string | null;
   coins: number;
   activePetId: string | null;
+  /** Missing on older accounts — treat as reminders off. */
+  reminders?: ReminderPrefs;
   createdAt: number;
 }
 
